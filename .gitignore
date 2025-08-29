@@ -28,3 +28,5 @@ drive/
 # System
 .idea/
 .vscode/
+
+docs/PLAN.md
