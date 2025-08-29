@@ -1,97 +1,168 @@
-# 3D Medical Image Segmentation Documentation
+# 3D Medical Image Segmentation: Comparative Analysis of Deep Learning Architectures
 
-Author: Thabhelo Duve  
-Supervisor: William (Liam) Oswald  
-Organization: Analytical AI  
-Duration: 12 weeks (Fall 2025)
+**Author**: Thabhelo Duve  
+**Supervisor**: William (Liam) Oswald  
+**Organization**: Analytical AI  
+**Duration**: Fall 2025
 
-This document serves as the authoritative record of the project: design decisions, software choices and justification, experimental procedures, and results.
+---
 
-## 1. Introduction and Objectives
-- Comparative analysis of 3D U-Net, UNETR, SegResNet across BraTS, MSD Liver, TotalSegmentator.
-- Goals: performance benchmarking, best-practices, and recommendations for 3D medical segmentation.
+## Abstract
 
-### Problem Background
-Voxel-wise semantic segmentation assigns a class label to every voxel in a 3D medical volume (CT/MRI). Challenges include anisotropic spacing, large memory footprint, class imbalance, and domain variability across scanners and hospitals.
+This study presents a comprehensive comparative analysis of three state-of-the-art 3D deep learning architectures for medical image segmentation: 3D U-Net, UNETR, and SegResNet. We evaluate these architectures across three diverse medical imaging datasets (BraTS, Medical Segmentation Decathlon Liver, TotalSegmentator) to determine optimal architectural choices for different anatomical regions and imaging modalities. Our experimental framework provides systematic performance benchmarking and practical recommendations for clinical deployment.
 
-### Approach Summary
-- Preprocess and normalize 3D volumes with MONAI transforms.
-- Train three architectures representing convolutional, transformer-augmented, and residual families.
-- Evaluate with Dice/IoU and report training efficiency (epochs/time).
+---
 
-## 2. Software and Platform Choices
-- Compute: Google Colab (A100 GPU), storage via Google Drive.
-- Frameworks: PyTorch + MONAI. Justification: mature 3D tooling, extensive transforms/metrics, active community.
-- Experiment tracking: Git commits + on-disk results; future: lightweight CSV/JSON aggregation.
+## 1. Introduction
 
-### Libraries In Use
-- PyTorch (core DL), MONAI (medical imaging transforms, metrics, networks)
-- NumPy/SciPy/Pandas (data ops), Matplotlib/Seaborn (plots)
-- nibabel/SimpleITK (NIfTI IO)
+### 1.1 Problem Statement
 
-### Dataset Handling
-- Canonical dataset keys: `brats`, `msd_liver`, `totalsegmentator`
-- Accepted aliases: `brats`/`brats2021` → `brats`; `msd`/`task03_liver` → `msd_liver`; `TotalSegmentator` only for the third dataset.
-- Current folder names (local Drive): `BraTS/`, `MSD/`, `TotalSegmentator/`.
+3D medical image segmentation involves assigning class labels to every voxel in volumetric medical images (CT/MRI). Key challenges include:
+- **Memory constraints**: 3D volumes require substantial GPU memory
+- **Anisotropic spacing**: Non-uniform voxel dimensions across datasets
+- **Class imbalance**: Target structures often comprise <1% of total volume
+- **Domain variability**: Scanner differences and imaging protocols
 
-## 3. Data Management
-- Datasets located at: `/content/drive/MyDrive/datasets`.
-- Expected subfolders: `BraTS/`, `MSD_Liver/`, `TotalSegmentator/`.
-- File formats: NIfTI (`.nii`, `.nii.gz`).
+### 1.2 Objectives
 
-### Data Pipeline (Preprocessing & Augmentation)
-```mermaid
-flowchart LR
-    A[Load (NIfTI)] --> B[EnsureChannelFirst]
-    B --> C[Spacing (1,1,1) mm]
-    C --> D[Orientation RAS]
-    D --> E{Dataset}
-    E -- BraTS --> F[Normalize Intensity (nonzero, channel-wise)]
-    E -- MSD Liver --> G[Scale HU to 0..1 (-175..250)]
-    E -- TotalSegmentator --> H[Scale HU to 0..1 (-1024..1024)]
-    F & G & H --> I[CropForeground]
-    I --> J{Phase}
-    J -- Train --> K[RandCropByPosNegLabel + RandFlip/Rotate + Intensity Jitter]
-    J -- Val/Test --> L[Identity]
-    K & L --> M[To Tensor]
+1. **Performance Benchmarking**: Quantitative comparison of three architectures across multiple datasets
+2. **Generalization Analysis**: Evaluate architectural robustness across different anatomical regions
+3. **Efficiency Assessment**: Compare training time, memory usage, and inference speed
+4. **Clinical Recommendations**: Provide evidence-based guidelines for architecture selection
+
+---
+
+## 2. Related Work
+
+**3D U-Net** established the encoder-decoder paradigm for volumetric segmentation with skip connections enabling feature reuse [1]. **UNETR** introduced transformer encoders to medical segmentation, leveraging self-attention for global context modeling [2]. **SegResNet** applies residual learning principles to segmentation, enabling deeper networks with improved gradient flow [3,4].
+
+---
+
+## 3. Methodology
+
+### 3.1 Experimental Design
+
+We conduct a 3×3 factorial experiment comparing three architectures across three datasets:
+
+| Architecture | BraTS | MSD Liver | TotalSegmentator |
+|--------------|-------|-----------|------------------|
+| 3D U-Net     | Exp 1 | Exp 2     | Exp 3            |
+| UNETR        | Exp 4 | Exp 5     | Exp 6            |
+| SegResNet    | Exp 7 | Exp 8     | Exp 9            |
+
+### 3.2 Datasets
+
+**BraTS 2021** [5]: Brain tumor segmentation with 1,251 cases, 4 MRI modalities (T1, T1ce, T2, FLAIR), 4 classes (background, NCR/NET, ED, ET).
+
+**Medical Segmentation Decathlon - Liver** [6]: Abdominal CT segmentation with 131 cases, 3 classes (background, liver, tumor).
+
+**TotalSegmentator** [7]: Whole-body CT segmentation with 1,228 cases, 118 anatomical structures.
+
+### 3.3 Preprocessing Pipeline
+
+Standardized preprocessing ensures fair architectural comparison:
+
+```
+Load NIfTI → EnsureChannelFirst → Spacing(1,1,1)mm → Orientation(RAS) → 
+Dataset-specific normalization → CropForeground → Patch extraction
 ```
 
-## 4. Methodology
-- 3×3 experiment matrix (architectures × datasets).
-- Config-driven training (see `configs/`).
-- Preprocessing and augmentation using MONAI.
-- Evaluation metrics: Dice, IoU, Hausdorff, surface distance, sensitivity, specificity.
+**Dataset-specific normalization**:
+- BraTS: Per-channel intensity normalization (nonzero voxels)
+- MSD Liver: HU windowing [-175, 250] → [0, 1]  
+- TotalSegmentator: HU windowing [-1024, 1024] → [0, 1]
 
-### Architectures
-- 3D U-Net (encoder-decoder with skip connections) — strong baseline for volumetric tasks.
-- UNETR (ViT encoder + CNN decoder) — leverages global context via self-attention.
-- SegResNet (residual encoder-decoder) — efficient training with residual blocks.
+### 3.4 Architecture Specifications
 
-### Training Loop
-```mermaid
-sequenceDiagram
-    participant D as DataLoader
-    participant M as Model
-    participant L as Loss
-    participant O as Optimizer
-    participant C as Checkpointer
+**3D U-Net**: Channels (64,128,256,512,1024), strides (2,2,2,2), dropout 0.1, batch normalization.
 
-    loop Epochs
-        D->>M: batch(images)
-        M-->>D: logits
-        M->>L: logits, labels
-        L-->>M: loss
-        M->>O: backward(step)
-        Note over D,M: iterate batches
-        M->>C: validate + maybe save best
-    end
-```
+**UNETR**: Feature size 16, hidden size 768, 12 attention heads, patch size 128³, instance normalization.
 
-## 5. Reproducibility
-- All scripts and configs under version control.
-- Random seeds documented per run; checkpoints stored under Drive `results/`.
+**SegResNet**: Initial filters 32, blocks [1,2,2,4] down / [1,1,1] up, group normalization (8 groups), dropout 0.2.
 
-## 6. Progress Timeline (Engineering Log)
+### 3.5 Training Configuration
+
+- **Loss**: Dice + Cross-entropy (1:1 weighting)
+- **Optimizer**: Adam (lr=1e-4, weight_decay=1e-5)
+- **Scheduler**: Cosine annealing with 10-epoch warmup
+- **Batch size**: 2 (memory constrained)
+- **Epochs**: 100 with early stopping (patience=15)
+- **Patches**: 128³ with 2:1 positive:negative sampling
+
+### 3.6 Evaluation Metrics
+
+**Primary**: Dice coefficient, mean IoU  
+**Secondary**: Hausdorff distance, surface distance, sensitivity, specificity  
+**Efficiency**: Training time, peak memory, inference speed, model parameters
+
+---
+
+## 4. Implementation Details
+
+**Platform**: Google Colab (A100 GPU), Google Drive storage  
+**Framework**: PyTorch 2.0, MONAI 1.3+ for medical-specific transforms and metrics  
+**Reproducibility**: Fixed random seeds, version-controlled configurations  
+
+Data augmentation includes spatial transforms (flip, rotation, scaling) and intensity jittering during training. Validation uses center cropping without augmentation.
+
+---
+
+## 5. Results
+
+### 5.1 Performance Comparison
+
+*[Table to be populated with experimental results]*
+
+| Architecture | Dataset | Dice | IoU | Training Time (h) | Memory (GB) |
+|--------------|---------|------|-----|-------------------|-------------|
+| 3D U-Net     | BraTS   | -    | -   | -                 | -           |
+| UNETR        | BraTS   | -    | -   | -                 | -           |
+| SegResNet    | BraTS   | -    | -   | -                 | -           |
+
+### 5.2 Statistical Analysis
+
+*[ANOVA results and significance testing to be added]*
+
+### 5.3 Architectural Insights
+
+*[Analysis of architecture-dataset interactions to be populated]*
+
+---
+
+## 6. Discussion
+
+### 6.1 Performance Trends
+
+*[To be populated with analysis of results]*
+
+### 6.2 Computational Efficiency
+
+*[Comparison of training time and resource usage]*
+
+### 6.3 Clinical Implications
+
+*[Recommendations for practical deployment]*
+
+### 6.4 Limitations
+
+- Limited to three architectures and datasets
+- Single institution data (no multi-center validation)
+- Fixed hyperparameters across architectures
+- Computational constraints limit batch size exploration
+
+---
+
+## 7. Conclusions
+
+*[Key findings and recommendations to be populated after experiments]*
+
+1. **Architecture Ranking**: [To be determined]
+2. **Dataset-specific Recommendations**: [To be determined]  
+3. **Efficiency-Performance Trade-offs**: [To be determined]
+4. **Clinical Deployment Guidelines**: [To be determined]
+
+---
+## 8. Progress Timeline (Engineering Log)
 - 2025-08-29: Repo initialized; structure scaffolded; requirements and setup added.
 - 2025-08-29: Base config added for Colab paths; script stubs created.
 - 2025-08-29: Dataset loaders implemented for BraTS, MSD Liver, TotalSegmentator.
@@ -101,31 +172,37 @@ sequenceDiagram
 - 2025-08-29: Standardized on folder name `TotalSegmentator`; removed deprecated synonyms.
 - 2025-08-29: Simplified environment path logic in notebook; removed unused helpers.
 
-## 7. Results (to be populated)
-- Record per-experiment metrics, resource usage, and training curves.
-- Comparative tables and plots.
+## 9. Future Work
 
-### Primary Metrics
-- Dice Coefficient: \( Dice = \frac{2TP}{2TP + FP + FN} \)
-- Mean IoU: \( IoU = \frac{TP}{TP + FP + FN} \)
-
-## 8. Discussion (to be populated)
-- Interpretation of results, dataset/architecture interactions, limitations.
-
-## 9. Conclusion (to be populated)
-- Key findings and recommendations.
-
-## 10. References
-- Include citations for datasets and key methods.
-
-### Citations
-- Çiçek, Ö. et al. "3D U-Net: Learning Dense Volumetric Segmentation from Sparse Annotation." MICCAI 2016.
-- Hatamizadeh, A. et al. "UNETR: Transformers for 3D Medical Image Segmentation." WACV 2022.
-- He, K. et al. "Deep Residual Learning for Image Recognition." CVPR 2016. (SegResNet builds on residual design; MONAI implementation.)
-- MONAI Consortium. "MONAI: Open-Source Framework for Healthcare AI." arXiv:2211.02701.
-- Menze, B.H. et al. "The Multimodal Brain Tumor Image Segmentation Benchmark (BRATS)." IEEE TMI 2015.
-- Simpson, A.L. et al. "Medical Segmentation Decathlon." arXiv:1902.09063.
-- Wasserthal, J. et al. "TotalSegmentator: Robust Segmentation of 104 Anatomic Structures in CT." Radiology: AI 2023.
+- Extend to additional architectures (nnU-Net, Swin-UNETR)
+- Multi-institutional validation studies
+- Uncertainty quantification and model calibration
+- Real-time inference optimization for clinical deployment
 
 ---
 
+## References
+
+[1] Çiçek, Ö., et al. "3D U-Net: Learning Dense Volumetric Segmentation from Sparse Annotation." MICCAI 2016.
+
+[2] Hatamizadeh, A., et al. "UNETR: Transformers for 3D Medical Image Segmentation." WACV 2022.
+
+[3] He, K., et al. "Deep Residual Learning for Image Recognition." CVPR 2016.
+
+[4] MONAI Consortium. "MONAI: Medical Open Network for AI." arXiv:2211.02701, 2022.
+
+[5] Menze, B.H., et al. "The Multimodal Brain Tumor Image Segmentation Benchmark (BRATS)." IEEE TMI 2015.
+
+[6] Simpson, A.L., et al. "A Large Annotated Medical Image Dataset for the Development and evaluation of Segmentation Algorithms." arXiv:1902.09063, 2019.
+
+[7] Wasserthal, J., et al. "TotalSegmentator: Robust Segmentation of 104 Anatomic Structures in CT Images." Radiology: Artificial Intelligence 2023.
+
+---
+
+## Appendix A: Experimental Configuration
+
+*[Detailed hyperparameters and configuration files]*
+
+## Appendix B: Additional Results
+
+*[Supplementary figures and detailed metrics]*
