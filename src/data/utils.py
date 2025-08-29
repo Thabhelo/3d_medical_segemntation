@@ -83,12 +83,7 @@ def normalize_dataset_name(name: str) -> str:
         "msd": "msd_liver",
         "msd_liver": "msd_liver",
         "task03_liver": "msd_liver",
-        "totalseg": "totalsegmentator",
         "totalsegmentator": "totalsegmentator",
-        "total_segmentator": "totalsegmentator",
-        "totalseg": "totalsegmentator",
-        "totalsegmentor": "totalsegmentator",
-        "totalsegmantator": "totalsegmentator",
     }
     return aliases.get(n, n)
 

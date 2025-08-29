@@ -25,6 +25,7 @@ Synonyms examples:
 - BraTS: `BraTS`, `brats`, `BraTS2021`
 - MSD Liver: `MSD`, `MSD_Liver`, `Task03_Liver`
 - TotalSegmentator: `TotalSegmentator`, `TotalSegmentor`, `TotalSegmantator`, `TotalSeg`
+  (We now standardize on `TotalSegmentator` only.)
 
 ## Status
 - Datasets: BraTS, MSD Liver, TotalSegmentator loaders implemented
