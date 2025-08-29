@@ -113,3 +113,189 @@ class BraTSDataset(MedicalDataset):
         return data
 
 
+class MSDLiverDataset(MedicalDataset):
+    """
+    Medical Segmentation Decathlon - Task03 Liver.
+
+    Expected layout (typical MSD):
+      root_dir/
+        imagesTr/*.nii.gz
+        labelsTr/*.nii.gz
+
+    This implementation is robust to slight naming variations:
+    - Images may end with `_0000.nii.gz` (single modality); labels typically do not.
+    - Falls back to matching stems when `_0000` is absent.
+    """
+
+    def __init__(self, root_dir: str, split: str = "train", transforms: Optional[Any] = None):
+        super().__init__(root_dir=root_dir, split=split, transforms=transforms)
+        self.images_dir, self.labels_dir = self._resolve_directories()
+
+    @property
+    def num_classes(self) -> int:
+        # Background, Liver, Tumor
+        return 3
+
+    def get_class_info(self) -> Dict[str, Any]:
+        return {
+            "labels": {
+                0: "background",
+                1: "liver",
+                2: "tumor",
+            }
+        }
+
+    def _resolve_directories(self) -> tuple[Path, Path]:
+        candidates_img = [
+            self.root_dir / "imagesTr",
+            self.root_dir / "images",
+            self.root_dir / "img",
+            self.root_dir / "training" / "images",
+        ]
+        candidates_lbl = [
+            self.root_dir / "labelsTr",
+            self.root_dir / "labels",
+            self.root_dir / "lab",
+            self.root_dir / "training" / "labels",
+        ]
+
+        images_dir = next((p for p in candidates_img if p.exists()), self.root_dir)
+        labels_dir = next((p for p in candidates_lbl if p.exists()), self.root_dir)
+        return images_dir, labels_dir
+
+    def get_data_dicts(self) -> List[Dict[str, Any]]:
+        if not self.images_dir.exists() or not self.labels_dir.exists():
+            return []
+
+        def is_nifti(p: Path) -> bool:
+            return p.is_file() and (p.suffix in {".nii", ".gz"} or p.name.endswith(".nii.gz"))
+
+        images = sorted([p for p in self.images_dir.iterdir() if is_nifti(p)])
+        data: List[Dict[str, Any]] = []
+
+        for img in images:
+            stem = img.name
+            if stem.endswith("_0000.nii.gz"):
+                base = stem.replace("_0000.nii.gz", "")
+                label_candidates = [
+                    self.labels_dir / f"{base}.nii.gz",
+                    self.labels_dir / f"{base}.nii",
+                ]
+            elif stem.endswith(".nii.gz"):
+                base = stem.replace(".nii.gz", "")
+                label_candidates = [
+                    self.labels_dir / f"{base}.nii.gz",
+                    self.labels_dir / f"{base}.nii",
+                ]
+            elif stem.endswith(".nii"):
+                base = stem.replace(".nii", "")
+                label_candidates = [
+                    self.labels_dir / f"{base}.nii.gz",
+                    self.labels_dir / f"{base}.nii",
+                ]
+            else:
+                label_candidates = []
+
+            label_path = next((p for p in label_candidates if p.exists()), None)
+            if label_path is None:
+                # Try a fuzzy match by stem containment
+                base_stem = Path(base).name if 'base' in locals() else img.stem
+                for cand in self.labels_dir.iterdir():
+                    if not is_nifti(cand):
+                        continue
+                    if base_stem in cand.stem or cand.stem in base_stem:
+                        label_path = cand
+                        break
+
+            if label_path is None:
+                continue
+
+            data.append({
+                "image": img.as_posix(),
+                "label": label_path.as_posix(),
+                "case_id": Path(img.stem.replace("_0000", "")).name,
+            })
+
+        return data
+
+
+class TotalSegmentatorDataset(MedicalDataset):
+    """
+    TotalSegmentator dataset loader.
+
+    Assumes a simple images/labels directory layout. Labels contain multiple
+    anatomical classes encoded as integers in a single volume.
+    """
+
+    def __init__(self, root_dir: str, split: str = "train", transforms: Optional[Any] = None):
+        super().__init__(root_dir=root_dir, split=split, transforms=transforms)
+        self.images_dir, self.labels_dir = self._resolve_directories()
+
+    @property
+    def num_classes(self) -> int:
+        # Background + 117 anatomical structures
+        return 118
+
+    def get_class_info(self) -> Dict[str, Any]:
+        return {
+            "num_classes": 118,
+            "description": "Background + 117 anatomical structures",
+        }
+
+    def _resolve_directories(self) -> tuple[Path, Path]:
+        candidates_img = [
+            self.root_dir / "imagesTr",
+            self.root_dir / "images",
+            self.root_dir / "ct",
+            self.root_dir / "training" / "images",
+        ]
+        candidates_lbl = [
+            self.root_dir / "labelsTr",
+            self.root_dir / "labels",
+            self.root_dir / "segmentations",
+            self.root_dir / "training" / "labels",
+        ]
+
+        images_dir = next((p for p in candidates_img if p.exists()), self.root_dir)
+        labels_dir = next((p for p in candidates_lbl if p.exists()), self.root_dir)
+        return images_dir, labels_dir
+
+    def get_data_dicts(self) -> List[Dict[str, Any]]:
+        if not self.images_dir.exists() or not self.labels_dir.exists():
+            return []
+
+        def is_nifti(p: Path) -> bool:
+            return p.is_file() and (p.suffix in {".nii", ".gz"} or p.name.endswith(".nii.gz"))
+
+        images = sorted([p for p in self.images_dir.iterdir() if is_nifti(p)])
+        data: List[Dict[str, Any]] = []
+
+        for img in images:
+            base_stem = img.stem.replace("_0000", "")
+            candidates = [
+                self.labels_dir / f"{base_stem}.nii.gz",
+                self.labels_dir / f"{base_stem}.nii",
+            ]
+            label_path = next((p for p in candidates if p.exists()), None)
+
+            if label_path is None:
+                # Fallback fuzzy match
+                for cand in self.labels_dir.iterdir():
+                    if not is_nifti(cand):
+                        continue
+                    if base_stem in cand.stem or cand.stem in base_stem:
+                        label_path = cand
+                        break
+
+            if label_path is None:
+                continue
+
+            data.append({
+                "image": img.as_posix(),
+                "label": label_path.as_posix(),
+                "case_id": base_stem,
+            })
+
+        return data
+
+
