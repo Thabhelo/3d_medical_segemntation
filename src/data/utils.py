@@ -1,8 +1,14 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Iterable, List, Sequence, Tuple, TypeVar
+from typing import Iterable, List, Optional, Sequence, Tuple, TypeVar
 import random
+
+from monai.data import CacheDataset, Dataset
+from torch.utils.data import DataLoader
+
+from .datasets import BraTSDataset, MSDLiverDataset, TotalSegmentatorDataset
+from .transforms import get_transforms
 
 
 T = TypeVar("T")
@@ -66,5 +72,91 @@ def find_case_directories(root_dir: Path) -> List[Path]:
             if has_nifti:
                 case_dirs.append(path)
     return case_dirs
+
+
+def get_dataset_instance(
+    dataset_name: str,
+    root_dir: str,
+    split: str,
+    transforms=None,
+):
+    name = dataset_name.lower()
+    if name == "brats":
+        return BraTSDataset(root_dir=root_dir, split=split, transforms=transforms)
+    if name == "msd_liver":
+        return MSDLiverDataset(root_dir=root_dir, split=split, transforms=transforms)
+    if name == "totalsegmentator":
+        return TotalSegmentatorDataset(root_dir=root_dir, split=split, transforms=transforms)
+    raise ValueError(f"Unknown dataset: {dataset_name}")
+
+
+def create_monai_datasets(
+    dataset_name: str,
+    root_dir: str,
+    train_fraction: float = 0.8,
+    seed: int = 42,
+    patch_size: Optional[Tuple[int, int, int]] = (128, 128, 128),
+    cache_rate: float = 0.0,
+):
+    """
+    Build MONAI Datasets (train/val) with appropriate transforms.
+    """
+    # Build transforms
+    train_transforms = get_transforms(dataset_name, phase="train", patch_size=patch_size)
+    val_transforms = get_transforms(dataset_name, phase="val")
+
+    # Instantiate dataset class and obtain dicts
+    ds = get_dataset_instance(dataset_name, root_dir, split="train")
+    dicts = ds.get_data_dicts()
+    train_dicts, val_dicts = deterministic_split(dicts, train_fraction=train_fraction, seed=seed)
+
+    if cache_rate and cache_rate > 0.0:
+        train_ds = CacheDataset(data=train_dicts, transform=train_transforms, cache_rate=cache_rate)
+        val_ds = CacheDataset(data=val_dicts, transform=val_transforms, cache_rate=cache_rate)
+    else:
+        train_ds = Dataset(data=train_dicts, transform=train_transforms)
+        val_ds = Dataset(data=val_dicts, transform=val_transforms)
+
+    return train_ds, val_ds
+
+
+def create_dataloaders(
+    dataset_name: str,
+    root_dir: str,
+    batch_size: int = 2,
+    num_workers: int = 4,
+    train_fraction: float = 0.8,
+    seed: int = 42,
+    patch_size: Optional[Tuple[int, int, int]] = (128, 128, 128),
+    cache_rate: float = 0.0,
+):
+    train_ds, val_ds = create_monai_datasets(
+        dataset_name=dataset_name,
+        root_dir=root_dir,
+        train_fraction=train_fraction,
+        seed=seed,
+        patch_size=patch_size,
+        cache_rate=cache_rate,
+    )
+
+    persistent = num_workers > 0
+    train_loader = DataLoader(
+        train_ds,
+        batch_size=batch_size,
+        shuffle=True,
+        num_workers=num_workers,
+        pin_memory=True,
+        persistent_workers=persistent,
+        drop_last=True,
+    )
+    val_loader = DataLoader(
+        val_ds,
+        batch_size=1,
+        shuffle=False,
+        num_workers=num_workers,
+        pin_memory=True,
+        persistent_workers=persistent,
+    )
+    return train_loader, val_loader
 
 
