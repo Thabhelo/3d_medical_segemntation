@@ -24,6 +24,7 @@ This document serves as the authoritative record of the project: design decision
 ### Dataset Handling
 - Canonical dataset keys: `brats`, `msd_liver`, `totalsegmentator`
 - Synonyms supported via `src/data/utils.py:normalize_dataset_name`
+- Current folder names (local Drive): `BraTS/`, `MSD/`, `TotalSegmentor/` (normalized to `totalsegmentator`).
 
 ## 3. Data Management
 - Datasets located at: `/content/drive/MyDrive/datasets`.
