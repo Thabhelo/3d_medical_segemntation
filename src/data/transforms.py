@@ -27,7 +27,13 @@ def get_preprocessing_transforms(dataset_name: str, phase: str) -> Compose:
     dataset_name: one of {"brats", "msd_liver", "totalsegmentator"}
     phase: "train" | "val" | "test"
     """
-    name = dataset_name.lower()
+    name = dataset_name.lower().replace(" ", "_")
+    if name in {"brats2021"}:
+        name = "brats"
+    if name in {"msd", "task03_liver"}:
+        name = "msd_liver"
+    if name in {"totalseg", "total_segmentator"}:
+        name = "totalsegmentator"
 
     base = [
         LoadImaged(keys=["image", "label"]),

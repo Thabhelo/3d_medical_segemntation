@@ -74,13 +74,30 @@ def find_case_directories(root_dir: Path) -> List[Path]:
     return case_dirs
 
 
+def normalize_dataset_name(name: str) -> str:
+    """Map user-facing names to internal canonical dataset keys."""
+    n = name.strip().lower().replace(" ", "_")
+    aliases = {
+        "brats": "brats",
+        "brats2021": "brats",
+        "msd": "msd_liver",
+        "msd_liver": "msd_liver",
+        "task03_liver": "msd_liver",
+        "totalseg": "totalsegmentator",
+        "totalsegmentator": "totalsegmentator",
+        "total_segmentator": "totalsegmentator",
+        "totalseg": "totalsegmentator",
+    }
+    return aliases.get(n, n)
+
+
 def get_dataset_instance(
     dataset_name: str,
     root_dir: str,
     split: str,
     transforms=None,
 ):
-    name = dataset_name.lower()
+    name = normalize_dataset_name(dataset_name)
     if name == "brats":
         return BraTSDataset(root_dir=root_dir, split=split, transforms=transforms)
     if name == "msd_liver":
@@ -102,11 +119,12 @@ def create_monai_datasets(
     Build MONAI Datasets (train/val) with appropriate transforms.
     """
     # Build transforms
-    train_transforms = get_transforms(dataset_name, phase="train", patch_size=patch_size)
-    val_transforms = get_transforms(dataset_name, phase="val")
+    norm_name = normalize_dataset_name(dataset_name)
+    train_transforms = get_transforms(norm_name, phase="train", patch_size=patch_size)
+    val_transforms = get_transforms(norm_name, phase="val")
 
     # Instantiate dataset class and obtain dicts
-    ds = get_dataset_instance(dataset_name, root_dir, split="train")
+    ds = get_dataset_instance(norm_name, root_dir, split="train")
     dicts = ds.get_data_dicts()
     train_dicts, val_dicts = deterministic_split(dicts, train_fraction=train_fraction, seed=seed)
 
