@@ -32,7 +32,7 @@ def get_preprocessing_transforms(dataset_name: str, phase: str) -> Compose:
         name = "brats"
     if name in {"msd", "task03_liver"}:
         name = "msd_liver"
-    if name in {"totalseg", "total_segmentator"}:
+    if name in {"totalseg", "total_segmentator", "totalsegmentor", "totalsegmantator"}:
         name = "totalsegmentator"
 
     base = [

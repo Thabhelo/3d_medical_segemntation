@@ -87,6 +87,8 @@ def normalize_dataset_name(name: str) -> str:
         "totalsegmentator": "totalsegmentator",
         "total_segmentator": "totalsegmentator",
         "totalseg": "totalsegmentator",
+        "totalsegmentor": "totalsegmentator",
+        "totalsegmantator": "totalsegmentator",
     }
     return aliases.get(n, n)
 
