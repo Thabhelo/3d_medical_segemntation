@@ -16,6 +16,15 @@ This document serves as the authoritative record of the project: design decision
 - Frameworks: PyTorch + MONAI. Justification: mature 3D tooling, extensive transforms/metrics, active community.
 - Experiment tracking: Git commits + on-disk results; future: lightweight CSV/JSON aggregation.
 
+### Libraries In Use
+- PyTorch (core DL), MONAI (medical imaging transforms, metrics, networks)
+- NumPy/SciPy/Pandas (data ops), Matplotlib/Seaborn (plots)
+- nibabel/SimpleITK (NIfTI IO)
+
+### Dataset Handling
+- Canonical dataset keys: `brats`, `msd_liver`, `totalsegmentator`
+- Synonyms supported via `src/data/utils.py:normalize_dataset_name`
+
 ## 3. Data Management
 - Datasets located at: `/content/drive/MyDrive/datasets`.
 - Expected subfolders: `BraTS/`, `MSD_Liver/`, `TotalSegmentator/`.
@@ -31,17 +40,24 @@ This document serves as the authoritative record of the project: design decision
 - All scripts and configs under version control.
 - Random seeds documented per run; checkpoints stored under Drive `results/`.
 
-## 6. Results (to be populated)
+## 6. Progress Timeline (Engineering Log)
+- 2025-08-29: Repo initialized; structure scaffolded; requirements and setup added.
+- 2025-08-29: Base config added for Colab paths; script stubs created.
+- 2025-08-29: Dataset loaders implemented for BraTS, MSD Liver, TotalSegmentator.
+- 2025-08-29: Preprocessing/augmentation transforms and dataloader builders implemented.
+- 2025-08-29: Colab bootstrap fixed to clone repo to Drive and install requirements.
+
+## 7. Results (to be populated)
 - Record per-experiment metrics, resource usage, and training curves.
 - Comparative tables and plots.
 
-## 7. Discussion (to be populated)
+## 8. Discussion (to be populated)
 - Interpretation of results, dataset/architecture interactions, limitations.
 
-## 8. Conclusion (to be populated)
+## 9. Conclusion (to be populated)
 - Key findings and recommendations.
 
-## 9. References
+## 10. References
 - Include citations for datasets and key methods.
 
 ---
