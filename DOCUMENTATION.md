@@ -47,6 +47,9 @@ This document serves as the authoritative record of the project: design decision
 - 2025-08-29: Dataset loaders implemented for BraTS, MSD Liver, TotalSegmentator.
 - 2025-08-29: Preprocessing/augmentation transforms and dataloader builders implemented.
 - 2025-08-29: Colab bootstrap fixed to clone repo to Drive and install requirements.
+- 2025-08-29: EDA notebook stabilized; dataset folder synonyms tested on Drive.
+- 2025-08-29: Standardized on folder name `TotalSegmentator`; removed deprecated synonyms.
+- 2025-08-29: Simplified environment path logic in notebook; removed unused helpers.
 
 ## 7. Results (to be populated)
 - Record per-experiment metrics, resource usage, and training curves.
