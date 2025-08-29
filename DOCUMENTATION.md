@@ -5,14 +5,14 @@ Supervisor: William (Liam) Oswald
 Organization: Analytical AI  
 Duration: 12 weeks (Fall 2025)
 
-This document serves as the authoritative record of the project: design decisions, software choices and justification, experimental procedures, results, and materials for the conference paper.
+This document serves as the authoritative record of the project: design decisions, software choices and justification, experimental procedures, and results.
 
 ## 1. Introduction and Objectives
 - Comparative analysis of 3D U-Net, UNETR, SegResNet across BraTS, MSD Liver, TotalSegmentator.
 - Goals: performance benchmarking, best-practices, and recommendations for 3D medical segmentation.
 
 ## 2. Software and Platform Choices
-- Compute: Google Colab (GPU), storage via Google Drive.
+- Compute: Google Colab (A100 GPU), storage via Google Drive.
 - Frameworks: PyTorch + MONAI. Justification: mature 3D tooling, extensive transforms/metrics, active community.
 - Experiment tracking: Git commits + on-disk results; future: lightweight CSV/JSON aggregation.
 
@@ -23,7 +23,7 @@ This document serves as the authoritative record of the project: design decision
 
 ### Dataset Handling
 - Canonical dataset keys: `brats`, `msd_liver`, `totalsegmentator`
-- Synonyms supported via `src/data/utils.py:normalize_dataset_name`
+- Accepted aliases: `brats`/`brats2021` → `brats`; `msd`/`task03_liver` → `msd_liver`; `TotalSegmentator` only for the third dataset.
 - Current folder names (local Drive): `BraTS/`, `MSD/`, `TotalSegmentator/`.
 
 ## 3. Data Management
@@ -65,4 +65,4 @@ This document serves as the authoritative record of the project: design decision
 - Include citations for datasets and key methods.
 
 ---
-Guidelines: no emojis; formal tone; keep this document up to date after each major milestone.
+
