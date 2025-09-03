@@ -1,8 +1,8 @@
-torch>=2.3.0
-torchvision>=0.18.0
-monai[all]>=1.3.0
-numpy>=1.24.0
-scipy>=1.10.0
+torch==2.3.0
+torchvision==0.18.0
+monai[all]==1.3.0
+numpy==1.26.4
+scipy>=1.12,<1.14
 scikit-learn>=1.3.0
 pandas>=2.0.0
 matplotlib>=3.7.0
