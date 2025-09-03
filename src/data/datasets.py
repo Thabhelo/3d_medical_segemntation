@@ -74,33 +74,51 @@ class BraTSDataset(MedicalDataset):
     def _discover_cases(self) -> List[Path]:
         if not self.root_dir.exists():
             return []
-        # A case directory is one that contains a segmentation file "*_seg.nii.gz"
-        cases: List[Path] = []
-        for path in self.root_dir.iterdir():
-            if path.is_dir():
-                seg = next(path.glob("*_seg.nii.gz"), None)
-                if seg is not None:
-                    cases.append(path)
-        cases.sort()
-        return cases
+        # Robustly discover case directories anywhere under root by looking for *_seg(.nii|.nii.gz)
+        seg_files = [
+            p
+            for p in self.root_dir.rglob("*_seg.nii*")
+            if p.suffix in {".nii", ".gz"} or p.name.endswith(".nii.gz")
+        ]
+        case_dirs = sorted({p.parent for p in seg_files})
+        return list(case_dirs)
 
     def get_data_dicts(self) -> List[Dict[str, Any]]:
         data: List[Dict[str, Any]] = []
         for case_dir in self.cases:
             case_id = case_dir.name
-            images = []
+
+            def find_file_for_mod(mod: str) -> Optional[Path]:
+                mod_l = mod.lower()
+                candidates = [
+                    f for f in case_dir.iterdir() if f.is_file()
+                    and (
+                        f.name.lower().endswith(f"_{mod_l}.nii.gz") or
+                        f.name.lower().endswith(f"_{mod_l}.nii")
+                    )
+                ]
+                return candidates[0] if candidates else None
+
+            images: List[str] = []
             for mod in self.MODALITIES:
-                candidate = next(case_dir.glob(f"*_{mod}.nii.gz"), None)
-                if candidate is None:
-                    # If any modality missing, skip the case to avoid runtime failures
+                f = find_file_for_mod(mod)
+                if f is None:
                     images = []
                     break
-                images.append(candidate.as_posix())
+                images.append(f.as_posix())
 
             if not images:
                 continue
 
-            label = next(case_dir.glob("*_seg.nii.gz"), None)
+            # find label as *_seg.nii or *_seg.nii.gz
+            label = None
+            for f in case_dir.iterdir():
+                if not f.is_file():
+                    continue
+                n = f.name.lower()
+                if n.endswith("_seg.nii.gz") or n.endswith("_seg.nii"):
+                    label = f
+                    break
             if label is None:
                 continue
 
