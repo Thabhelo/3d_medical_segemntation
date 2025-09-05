@@ -85,19 +85,30 @@ class BraTSDataset(MedicalDataset):
 
     def get_data_dicts(self) -> List[Dict[str, Any]]:
         data: List[Dict[str, Any]] = []
+        # Accept common BraTS modality aliases (BraTS 2021/2024):
+        # t1: [t1, t1n]; t1ce: [t1ce, t1c]; t2: [t2, t2w]; flair: [flair, t2f]
+        modality_aliases = {
+            "t1": ["t1n", "t1"],
+            "t1ce": ["t1c", "t1ce"],
+            "t2": ["t2w", "t2"],
+            "flair": ["t2f", "flair"],
+        }
+
         for case_dir in self.cases:
             case_id = case_dir.name
 
             def find_file_for_mod(mod: str) -> Optional[Path]:
-                mod_l = mod.lower()
-                candidates = [
-                    f for f in case_dir.iterdir() if f.is_file()
-                    and (
-                        f.name.lower().endswith(f"_{mod_l}.nii.gz") or
-                        f.name.lower().endswith(f"_{mod_l}.nii")
-                    )
-                ]
-                return candidates[0] if candidates else None
+                tokens = modality_aliases.get(mod, [mod])
+                matches: List[Path] = []
+                for f in case_dir.iterdir():
+                    if not f.is_file():
+                        continue
+                    name = f.name.lower()
+                    if (name.endswith(".nii") or name.endswith(".nii.gz")) and any(t in name for t in tokens):
+                        matches.append(f)
+                # Prefer .nii.gz if multiple
+                matches.sort(key=lambda p: (0 if p.name.endswith(".nii.gz") else 1, p.name))
+                return matches[0] if matches else None
 
             images: List[str] = []
             for mod in self.MODALITIES:
@@ -110,13 +121,13 @@ class BraTSDataset(MedicalDataset):
             if not images:
                 continue
 
-            # find label as *_seg.nii or *_seg.nii.gz
+            # find label (segmentation) file
             label = None
             for f in case_dir.iterdir():
                 if not f.is_file():
                     continue
                 n = f.name.lower()
-                if n.endswith("_seg.nii.gz") or n.endswith("_seg.nii"):
+                if (n.endswith(".nii") or n.endswith(".nii.gz")) and ("_seg" in n or n == "seg.nii.gz" or n == "seg.nii"):
                     label = f
                     break
             if label is None:
