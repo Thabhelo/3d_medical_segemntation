@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+from .utils import fuse_totalseg_segmentations
 
 
 @dataclass
@@ -300,28 +301,36 @@ class TotalSegmentatorDataset(MedicalDataset):
         data: List[Dict[str, Any]] = []
 
         for img in images:
-            base_stem = img.stem.replace("_0000", "")
-            candidates = [
-                self.labels_dir / f"{base_stem}.nii.gz",
-                self.labels_dir / f"{base_stem}.nii",
-            ]
-            label_path = next((p for p in candidates if p.exists()), None)
+            base_stem = img.parent.name if img.name == "ct.nii.gz" else img.stem.replace("_0000", "")
 
-            if label_path is None:
-                # Fallback fuzzy match
-                for cand in self.labels_dir.iterdir():
-                    if not is_nifti(cand):
-                        continue
-                    if base_stem in cand.stem or cand.stem in base_stem:
-                        label_path = cand
-                        break
+            # When dataset is laid out as sXXXX/{ct.nii.gz,segmentations/*.nii.gz}
+            # create a fused label map per subject under the subject dir
+            subject_dir = img.parent if img.name == "ct.nii.gz" else self.labels_dir / base_stem
+            try:
+                fused = fuse_totalseg_segmentations(subject_dir)
+            except Exception:
+                # Fallback: try label files matching by stem
+                candidates = [
+                    self.labels_dir / f"{base_stem}.nii.gz",
+                    self.labels_dir / f"{base_stem}.nii",
+                ]
+                fused = next((p for p in candidates if p.exists()), None)
 
-            if label_path is None:
+            if fused is None or not Path(fused).exists():
                 continue
 
+            image_path = img if img.name == "ct.nii.gz" else (self.images_dir / f"{base_stem}.nii.gz")
+            if not image_path.exists():
+                # try subject_dir/ct.nii.gz
+                alt = subject_dir / "ct.nii.gz"
+                if alt.exists():
+                    image_path = alt
+                else:
+                    continue
+
             data.append({
-                "image": img.as_posix(),
-                "label": label_path.as_posix(),
+                "image": image_path.as_posix(),
+                "label": str(fused),
                 "case_id": base_stem,
             })
 

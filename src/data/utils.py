@@ -9,6 +9,8 @@ from torch.utils.data import DataLoader
 
 from .datasets import BraTSDataset, MSDLiverDataset, TotalSegmentatorDataset
 from .transforms import get_transforms
+import nibabel as nib
+import numpy as np
 
 
 T = TypeVar("T")
@@ -87,6 +89,38 @@ def normalize_dataset_name(name: str) -> str:
     }
     return aliases.get(n, n)
 
+
+def fuse_totalseg_segmentations(subject_dir: Path, output_name: str = "combined_labels.nii.gz") -> Path:
+    """
+    Combine TotalSegmentator per-structure masks (segmentations/*.nii.gz) into one indexed label map.
+
+    - Indexing starts at 1 in sorted(file name) order; background=0
+    - Overlaps are resolved by last-write wins (names are sorted to keep deterministic order)
+    - Returns the path to the fused NIfTI label file
+    """
+    ct_path = subject_dir / "ct.nii.gz"
+    seg_dir = subject_dir / "segmentations"
+    out_path = subject_dir / output_name
+
+    if out_path.exists():
+        return out_path
+    if not ct_path.exists() or not seg_dir.exists():
+        raise FileNotFoundError(f"Missing ct.nii.gz or segmentations folder in {subject_dir}")
+
+    ct_img = nib.load(str(ct_path))
+    shape = ct_img.shape
+    affine = ct_img.affine
+
+    label = np.zeros(shape, dtype=np.uint16)
+
+    mask_files = sorted([p for p in seg_dir.glob("*.nii*") if p.is_file()])
+    for idx, mpath in enumerate(mask_files, start=1):
+        m = nib.load(str(mpath)).get_fdata()
+        label[m > 0.5] = idx
+
+    out_img = nib.Nifti1Image(label, affine)
+    nib.save(out_img, str(out_path))
+    return out_path
 
 def get_dataset_instance(
     dataset_name: str,
