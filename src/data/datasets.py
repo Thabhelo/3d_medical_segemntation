@@ -75,10 +75,10 @@ class BraTSDataset(MedicalDataset):
     def _discover_cases(self) -> List[Path]:
         if not self.root_dir.exists():
             return []
-        # Robustly discover case directories anywhere under root by looking for *_seg(.nii|.nii.gz)
+        # Robustly discover case directories anywhere under root by looking for *seg*.nii*
         seg_files = [
             p
-            for p in self.root_dir.rglob("*_seg.nii*")
+            for p in self.root_dir.rglob("*seg*.nii*")
             if p.suffix in {".nii", ".gz"} or p.name.endswith(".nii.gz")
         ]
         case_dirs = sorted({p.parent for p in seg_files})
