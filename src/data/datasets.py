@@ -128,7 +128,7 @@ class BraTSDataset(MedicalDataset):
                 if not f.is_file():
                     continue
                 n = f.name.lower()
-                if (n.endswith(".nii") or n.endswith(".nii.gz")) and ("_seg" in n or n == "seg.nii.gz" or n == "seg.nii"):
+                if (n.endswith(".nii") or n.endswith(".nii.gz")) and ("seg" in n):
                     label = f
                     break
             if label is None:
