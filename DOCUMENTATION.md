@@ -163,14 +163,20 @@ Data augmentation includes spatial transforms (flip, rotation, scaling) and inte
 
 ---
 ## 8. Progress Timeline (Engineering Log)
-- 2025-08-29: Repo initialized; structure scaffolded; requirements and setup added.
-- 2025-08-29: Base config added for Colab paths; script stubs created.
+- 2025-08-27: Repo initialized; structure scaffolded; requirements and setup added.
+- 2025-08-27: Base config added for Colab paths; script stubs created.
 - 2025-08-29: Dataset loaders implemented for BraTS, MSD Liver, TotalSegmentator.
 - 2025-08-29: Preprocessing/augmentation transforms and dataloader builders implemented.
 - 2025-08-29: Colab bootstrap fixed to clone repo to Drive and install requirements.
 - 2025-08-29: EDA notebook stabilized; dataset folder synonyms tested on Drive.
 - 2025-08-29: Standardized on folder name `TotalSegmentator`; removed deprecated synonyms.
-- 2025-08-29: Simplified environment path logic in notebook; removed unused helpers.
+- 2025-08-29: Simplified environment path logic in notebook.
+- 2025-09-05: Model architectures (UNet, UNETR, SegResNet) and factory implemented.
+- 2025-09-05: Loss functions and evaluation metrics added.
+- 2025-09-05: Minimal trainer/evaluator with checkpointing implemented.
+- 2025-09-05: Dependencies pinned for Colab compatibility; BraTS NIfTI dataset acquired.
+- 2025-09-05: TotalSegmentator label fusion utility added for per-structure masks.
+- 2025-09-05: **Validation checkpoint**: MSD Liver ✓, BraTS ✓ smoke tests passed (dataloader + UNet forward verified). TotalSegmentator pending transform debug.
 
 ## 9. Future Work
 
