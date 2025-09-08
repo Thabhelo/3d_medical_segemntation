@@ -7,7 +7,7 @@ import torch
 from torch.utils.data import DataLoader
 from monai.metrics import DiceMetric
 from monai.transforms import AsDiscrete
-from monai.data import decollate_batch
+# from monai.data import decollate_batch  # Not needed with simplified metric computation
 from monai.networks.utils import one_hot
 
 
@@ -86,9 +86,9 @@ class Trainer:
             labels = batch["label"].to(self.device)
             logits = self.model(images)
 
-            # convert to onehot/discrete lists for metric
-            y_pred = [self.post_pred(p) for p in decollate_batch(logits)]
-            y = [self.post_label(p) for p in decollate_batch(labels)]
+            # convert to discrete for metric computation
+            y_pred = self.post_pred(logits)
+            y = self.post_label(labels)
             self.val_dice(y_pred, y)
 
         return float(self.val_dice.aggregate().item())
