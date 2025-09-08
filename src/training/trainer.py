@@ -8,6 +8,7 @@ from torch.utils.data import DataLoader
 from monai.metrics import DiceMetric
 from monai.transforms import AsDiscrete
 from monai.data import decollate_batch
+from monai.networks.utils import one_hot
 
 
 class Trainer:
@@ -48,9 +49,14 @@ class Trainer:
                 labels = batch["label"].to(self.device)
 
                 self.optimizer.zero_grad(set_to_none=True)
-                with torch.cuda.amp.autocast(enabled=self.amp):
+                with torch.amp.autocast('cuda', enabled=self.amp):
                     logits = self.model(images)
-                    loss = self.loss_fn(logits, labels)
+                    # Convert labels to one-hot if needed for loss calculation
+                    if labels.shape[1] == 1 and logits.shape[1] > 1:
+                        labels_onehot = one_hot(labels, num_classes=logits.shape[1])
+                    else:
+                        labels_onehot = labels
+                    loss = self.loss_fn(logits, labels_onehot)
                 scaler.scale(loss).backward()
                 scaler.step(self.optimizer)
                 scaler.update()
