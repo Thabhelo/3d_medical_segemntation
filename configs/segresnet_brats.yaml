@@ -8,7 +8,7 @@ data:
   batch_size: 2
   num_workers: 2
   cache_rate: 0.0
-  patch_size: [96, 96, 96]
+  patch_size: [128, 128, 128]
 
 model:
   in_channels: 4
