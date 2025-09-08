@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 import torch.nn as nn
-from monai.networks.nets import UNet, UNETR, SegResNet
+from monai.networks.nets import UNet, UNETR, SegResNet, BasicUNet
 
 
 def build_unet(
@@ -11,24 +11,21 @@ def build_unet(
     spatial_dims: int = 3,
     in_channels: int = 1,
     out_channels: int = 2,
-    channels: tuple[int, int, int, int, int] = (32, 64, 128, 256, 512),
-    strides: tuple[int, int, int, int] = (2, 2, 2, 2),
-    num_res_units: int = 2,
+    features: tuple[int, int, int, int, int, int] = (32, 32, 64, 128, 256, 32),
+    act: str = "relu",
     norm: str = "batch",
     dropout: float = 0.1,
-    act: str = "relu",
     **kwargs: Any,
 ) -> nn.Module:
-    return UNet(
+    # Use BasicUNet which handles arbitrary input sizes better
+    return BasicUNet(
         spatial_dims=spatial_dims,
         in_channels=in_channels,
         out_channels=out_channels,
-        channels=channels,
-        strides=strides,
-        num_res_units=num_res_units,
+        features=features,
+        act=act,
         norm=norm,
         dropout=dropout,
-        act=act,
         **kwargs,
     )
 
