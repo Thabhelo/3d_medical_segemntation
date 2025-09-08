@@ -99,6 +99,7 @@ def get_transforms(dataset_name: str, phase: str, patch_size: Optional[Tuple[int
             return Compose([preprocess, get_augmentation_transforms(patch_size)])
         else:
             # For validation: pad then center crop to fixed size
+            from monai.transforms import EnsureTyped
             return Compose([
                 preprocess,
                 SpatialPadd(keys=["image", "label"], spatial_size=patch_size, mode="constant"),

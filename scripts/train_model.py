@@ -34,7 +34,9 @@ def main() -> None:
         root_dir=args.data_root,
         batch_size=args.batch_size,
         num_workers=args.num_workers,
+        patch_size=(128, 128, 128),  # Force patch-based training/validation
     )
+    print(f"Created dataloaders with patch_size=(128, 128, 128)")
 
     model = create_model(
         architecture=args.architecture,
