@@ -35,13 +35,15 @@ class Trainer:
         self.val_dice = DiceMetric(include_background=False, reduction="mean")
 
     def train(self, train_loader: DataLoader, val_loader: DataLoader) -> Dict[str, float]:
-        scaler = torch.cuda.amp.GradScaler(enabled=self.amp)
+        scaler = torch.amp.GradScaler('cuda', enabled=self.amp)
         best_dice = -1.0
 
         for epoch in range(1, self.max_epochs + 1):
             self.model.train()
             running_loss = 0.0
-            for batch in train_loader:
+            for batch_data in train_loader:
+                # Handle MONAI batch format (can be list of dicts or dict)
+                batch = batch_data[0] if isinstance(batch_data, list) else batch_data
                 images = batch["image"].to(self.device)
                 labels = batch["label"].to(self.device)
 
@@ -69,7 +71,9 @@ class Trainer:
     def validate(self, val_loader: DataLoader) -> float:
         self.model.eval()
         self.val_dice.reset()
-        for batch in val_loader:
+        for batch_data in val_loader:
+            # Handle MONAI batch format (can be list of dicts or dict)
+            batch = batch_data[0] if isinstance(batch_data, list) else batch_data
             images = batch["image"].to(self.device)
             labels = batch["label"].to(self.device)
             logits = self.model(images)
