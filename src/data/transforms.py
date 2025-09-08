@@ -68,16 +68,13 @@ def get_preprocessing_transforms(dataset_name: str, phase: str) -> Compose:
 
 def get_augmentation_transforms(patch_size: Tuple[int, int, int]) -> Compose:
     """Training-time augmentation transforms."""
+    from monai.transforms import SpatialPadd, RandSpatialCropd
+    
     return Compose(
         [
-            RandCropByPosNegLabeld(
-                keys=["image", "label"],
-                label_key="label",
-                spatial_size=patch_size,
-                pos=2.0,
-                neg=1.0,
-                num_samples=4,
-            ),
+            # Ensure minimum size before cropping
+            SpatialPadd(keys=["image", "label"], spatial_size=patch_size, mode="constant"),
+            RandSpatialCropd(keys=["image", "label"], roi_size=patch_size, random_size=False),
             RandFlipd(keys=["image", "label"], prob=0.5, spatial_axis=0),
             RandFlipd(keys=["image", "label"], prob=0.5, spatial_axis=1),
             RandFlipd(keys=["image", "label"], prob=0.5, spatial_axis=2),
