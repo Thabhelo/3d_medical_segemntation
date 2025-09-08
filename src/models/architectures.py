@@ -11,7 +11,7 @@ def build_unet(
     spatial_dims: int = 3,
     in_channels: int = 1,
     out_channels: int = 2,
-    channels: tuple[int, int, int, int, int] = (64, 128, 256, 512, 1024),
+    channels: tuple[int, int, int, int, int] = (32, 64, 128, 256, 512),
     strides: tuple[int, int, int, int] = (2, 2, 2, 2),
     num_res_units: int = 2,
     norm: str = "batch",
