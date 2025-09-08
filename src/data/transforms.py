@@ -89,11 +89,22 @@ def get_augmentation_transforms(patch_size: Tuple[int, int, int]) -> Compose:
 def get_transforms(dataset_name: str, phase: str, patch_size: Optional[Tuple[int, int, int]] = None) -> Compose:
     """Convenience to build full transforms given phase.
 
-    For training, returns preprocessing + augmentation; for val/test, preprocessing only.
+    For training, returns preprocessing + augmentation; for val/test, preprocessing + center crop.
     """
+    from monai.transforms import SpatialPadd, CenterSpatialCropd
+    
     preprocess = get_preprocessing_transforms(dataset_name, phase)
-    if phase.lower() == "train" and patch_size is not None:
-        return Compose([preprocess, get_augmentation_transforms(patch_size)])
+    if patch_size is not None:
+        if phase.lower() == "train":
+            return Compose([preprocess, get_augmentation_transforms(patch_size)])
+        else:
+            # For validation: pad then center crop to fixed size
+            return Compose([
+                preprocess,
+                SpatialPadd(keys=["image", "label"], spatial_size=patch_size, mode="constant"),
+                CenterSpatialCropd(keys=["image", "label"], roi_size=patch_size),
+                EnsureTyped(keys=["image", "label"]),
+            ])
     return preprocess
 
 
