@@ -53,7 +53,9 @@ class Trainer:
                     logits = self.model(images)
                     # Convert labels to one-hot if needed for loss calculation
                     if labels.shape[1] == 1 and logits.shape[1] > 1:
-                        labels_onehot = one_hot(labels, num_classes=logits.shape[1])
+                        # Ensure labels are integers and within valid range [0, num_classes-1]
+                        labels_int = labels.long().clamp(0, logits.shape[1] - 1)
+                        labels_onehot = one_hot(labels_int, num_classes=logits.shape[1])
                     else:
                         labels_onehot = labels
                     loss = self.loss_fn(logits, labels_onehot)
