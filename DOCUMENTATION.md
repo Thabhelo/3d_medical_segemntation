@@ -178,6 +178,7 @@ Data augmentation includes spatial transforms (flip, rotation, scaling) and inte
 - 2025-09-05: TotalSegmentator label fusion utility added for per-structure masks.
 - 2025-09-05: **Validation checkpoint**: MSD Liver ✓, BraTS ✓ smoke tests passed (dataloader + UNet forward verified). TotalSegmentator has corrupted .nii.gz files (EOFError during LoadImaged) - requires re-download.
 - 2025-09-08: **Training breakthrough**: Fixed UNet tensor mismatch by switching to BasicUNet. First successful training run completed on Colab A100 with BraTS dataset.
+- 2025-09-08: **Production training**: Multiple experiments running successfully on Colab A100. UNet+BraTS, UNet+MSD, UNETR+BraTS all producing checkpoints. Resolved memory issues with forced patch-based validation.
 
 ## 9. Future Work
 
