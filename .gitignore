@@ -1,0 +1,30 @@
+.DS_Store
+__pycache__/
+*.pyc
+.env
+.venv/
+venv/
+.envrc
+.ipynb_checkpoints/
+results/
+*.nii
+*.nii.gz
+*.pt
+*.pth
+logs/
+.data/
+.cache/
+outputs/
+.checkpoints/
+.mypy_cache/
+pytest_cache/
+
+# Colab/Drive artifacts
+drive/
+*.zip
+*.tar
+*.tar.gz
+
+# System
+.idea/
+.vscode/

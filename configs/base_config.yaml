@@ -1,0 +1,35 @@
+experiment:
+  name: "baseline_experiment"
+  architecture: "unet"
+  dataset: "brats"
+
+data:
+  dataset_root: "{{ENV_DATASET_ROOT}}"  # Will be replaced by environment-appropriate path
+  batch_size: 2
+  num_workers: 4
+  cache_rate: 0.1
+  patch_size: [128, 128, 128]
+  train_val_split: 0.8
+
+model:
+  in_channels: 1
+  out_channels: 2
+
+training:
+  max_epochs: 2
+  learning_rate: 1e-4
+  weight_decay: 1e-5
+  scheduler: "cosine"
+  warmup_epochs: 1
+  loss_function: "dice_ce"
+
+validation:
+  interval: 1
+  metrics: ["dice", "iou"]
+  save_best: true
+  patience: 3
+
+paths:
+  output_root: "{{ENV_OUTPUT_ROOT}}"  # Will be replaced by environment-appropriate path
+  checkpoint_dir: "checkpoints"
+  logs_dir: "logs"
