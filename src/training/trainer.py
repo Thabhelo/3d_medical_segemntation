@@ -29,17 +29,17 @@ class Trainer:
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.max_epochs = max_epochs
-        self.amp = amp
+        self.amp = amp and device.type == "cuda"  # Only use AMP on GPU
 
         self.post_pred = AsDiscrete(argmax=True, to_onehot=None)
         self.post_label = AsDiscrete(to_onehot=None)
         self.val_dice = DiceMetric(include_background=False, reduction="mean")
 
-    def train(self, train_loader: DataLoader, val_loader: DataLoader) -> Dict[str, float]:
+    def train(self, train_loader: DataLoader, val_loader: DataLoader, start_epoch: int = 1) -> Dict[str, float]:
         scaler = torch.amp.GradScaler('cuda', enabled=self.amp)
         best_dice = -1.0
 
-        for epoch in range(1, self.max_epochs + 1):
+        for epoch in range(start_epoch, self.max_epochs + 1):
             self.model.train()
             running_loss = 0.0
             for batch_data in train_loader:

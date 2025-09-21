@@ -6,24 +6,16 @@ from pathlib import Path
 
 import torch
 
-from src.data.utils import create_dataloaders, get_default_dataset_root
+from src.data.utils import create_dataloaders
 from src.models.factory import create_model
 from src.models.losses import get_loss
 from src.training.trainer import Trainer
-from src.utils.runtime import get_runtime_info
 
 
 def main() -> None:
-    # Print runtime information
-    runtime_info = get_runtime_info()
-    print("Runtime Environment:")
-    for key, value in runtime_info.items():
-        print(f"  {key}: {value}")
-    print()
-    
     parser = argparse.ArgumentParser()
     parser.add_argument("--dataset", default="brats")
-    parser.add_argument("--data_root", default=None, help="Dataset root directory (default: environment-appropriate)")
+    parser.add_argument("--data_root", default="/home/aai-intern/Downloads/datasets")
     parser.add_argument("--architecture", default="unet")
     parser.add_argument("--in_channels", type=int, default=1)
     parser.add_argument("--out_channels", type=int, default=2)
@@ -34,13 +26,16 @@ def main() -> None:
     parser.add_argument("--lr", type=float, default=1e-4)
     parser.add_argument("--output_dir", default="results/tmp_run")
     args = parser.parse_args()
-    
-    # Use environment-appropriate dataset root if not specified
-    if args.data_root is None:
-        args.data_root = get_default_dataset_root()
-        print(f"Using dataset root: {args.data_root}")
+
+    # Check if training already completed
+    output_path = Path(args.output_dir)
+    if output_path.exists() and (output_path / "best.pth").exists():
+        print(f"Training already completed in {output_path}")
+        print("Use a different --output_dir to run again")
+        return
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"Using device: {device}")
 
     train_loader, val_loader = create_dataloaders(
         dataset_name=args.dataset,

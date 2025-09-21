@@ -4,7 +4,7 @@ experiment:
   dataset: "brats"
 
 data:
-  dataset_root: "{{ENV_DATASET_ROOT}}"  # Will be replaced by environment-appropriate path
+  dataset_root: "/home/aai-intern/Downloads/datasets"
   batch_size: 2
   num_workers: 4
   cache_rate: 0.1
@@ -30,6 +30,6 @@ validation:
   patience: 3
 
 paths:
-  output_root: "{{ENV_OUTPUT_ROOT}}"  # Will be replaced by environment-appropriate path
+  output_root: "results"
   checkpoint_dir: "checkpoints"
   logs_dir: "logs"
