@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
+import os
 
 import torch
 
@@ -15,7 +16,11 @@ from src.training.trainer import Trainer
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--dataset", default="brats")
-    parser.add_argument("--data_root", default="/home/aai-intern/Downloads/datasets")
+    # Auto-detect dataset root based on environment (Colab vs local)
+    default_data_root = (
+        "/content/drive/MyDrive/datasets" if os.path.isdir("/content") else str(Path.home() / "Downloads" / "datasets")
+    )
+    parser.add_argument("--data_root", default=default_data_root)
     parser.add_argument("--architecture", default="unet")
     parser.add_argument("--in_channels", type=int, default=1)
     parser.add_argument("--out_channels", type=int, default=2)
@@ -36,6 +41,7 @@ def main() -> None:
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
+    print(f"Dataset root: {args.data_root}")
 
     train_loader, val_loader = create_dataloaders(
         dataset_name=args.dataset,
