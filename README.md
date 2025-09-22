@@ -30,7 +30,12 @@ Synonyms examples:
 ## Status
 - Datasets: BraTS, MSD Liver, TotalSegmentator loaders implemented
 - Transforms & Dataloaders: implemented
-- Next: model factory (UNet, UNETR, SegResNet)
+- Model Factory: UNet, UNETR, SegResNet implemented
+- Training Infrastructure: implemented with checkpointing
+- Experiments Progress: 5/9 completed
+  - Completed: UNet+BraTS, UNet+MSD, UNETR+BraTS, UNETR+MSD, UNet+BraTS_test
+  - Remaining: SegResNet experiments (2) + TotalSegmentator experiments (3)
+- Next: Complete remaining experiments and results analysis
 
 ## License
 MIT

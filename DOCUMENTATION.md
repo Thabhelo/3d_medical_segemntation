@@ -179,6 +179,20 @@ Data augmentation includes spatial transforms (flip, rotation, scaling) and inte
 - 2025-09-05: **Validation checkpoint**: MSD Liver ✓, BraTS ✓ smoke tests passed (dataloader + UNet forward verified). TotalSegmentator has corrupted .nii.gz files (EOFError during LoadImaged) - requires re-download.
 - 2025-09-08: **Training breakthrough**: Fixed UNet tensor mismatch by switching to BasicUNet. First successful training run completed on Colab A100 with BraTS dataset.
 - 2025-09-08: **Production training**: Multiple experiments running successfully on Colab A100. UNet+BraTS, UNet+MSD, UNETR+BraTS all producing checkpoints. Resolved memory issues with forced patch-based validation.
+- 2025-09-09: **Experiment completion**: UNet+BraTS training completed successfully (50 epochs, best model saved). UNet+MSD_Liver training completed.
+- 2025-09-10: **UNETR experiments completed**: UNETR+BraTS and UNETR+MSD_Liver training runs completed successfully. 5/9 total experiments now finished.
+- 2025-09-10: TotalSegmentator dataset corrupted files resolved; dataset fully functional.
+- 2025-09-20: **Code refactoring**: Enhanced training script stability, improved data utilities, and configuration management.
+- 2025-09-21: **Infrastructure improvements**: Updated trainer implementation with better error handling and memory management. Base configuration system refined.
+- 2025-09-22: **Codebase optimization**: Removed deprecated runtime detection utilities; cleaned up configuration system. Code ready for remaining experiments.
+
+### Planned Timeline (Estimated):
+- 2025-09-23: **SegResNet experiments begin**: Start SegResNet+BraTS and SegResNet+MSD_Liver training runs.
+- 2025-09-24: **SegResNet completion**: Complete remaining SegResNet experiments (2/4 remaining experiments).
+- 2025-09-25: **TotalSegmentator experiments**: Begin UNet+TotalSegmentator, UNETR+TotalSegmentator, and SegResNet+TotalSegmentator experiments.
+- 2025-09-27: **All experiments completed**: Final 3 experiments with TotalSegmentator dataset completed (9/9 total).
+- 2025-09-28: **Results analysis**: Statistical analysis, performance comparison, and efficiency benchmarking.
+- 2025-09-30: **Documentation completion**: Final research report with clinical recommendations and conclusions.
 
 ## 9. Future Work
 
