@@ -206,6 +206,12 @@ def create_dataloaders(
     )
 
     persistent = num_workers > 0
+    if len(train_ds) == 0:
+        raise ValueError(
+            f"No training samples found for dataset '{dataset_name}' at root '{root_dir}'. "
+            f"Please verify dataset paths."
+        )
+
     train_loader = DataLoader(
         train_ds,
         batch_size=batch_size,
@@ -215,6 +221,12 @@ def create_dataloaders(
         persistent_workers=persistent,
         drop_last=True,
     )
+    if len(val_ds) == 0:
+        raise ValueError(
+            f"No validation samples found for dataset '{dataset_name}' at root '{root_dir}'. "
+            f"Please verify dataset paths."
+        )
+
     val_loader = DataLoader(
         val_ds,
         batch_size=1,
