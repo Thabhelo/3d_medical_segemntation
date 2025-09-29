@@ -42,6 +42,7 @@ class Trainer:
 
         for epoch in range(start_epoch, self.max_epochs + 1):
             epoch_start = time.time()
+            remaining_epochs = (self.max_epochs - epoch) + 1  # include current until we print ETA after validate
             print(f"[Epoch {epoch}/{self.max_epochs}] Starting training…", flush=True)
             self.model.train()
             running_loss = 0.0
@@ -70,8 +71,13 @@ class Trainer:
             train_loss = running_loss / max(1, len(train_loader))
             val_dice = self.validate(val_loader)
             elapsed = time.time() - epoch_start
+            # Simple ETA based on this epoch duration times remaining epochs
+            eta_seconds = max(0.0, elapsed * max(0, self.max_epochs - epoch))
+            eta_min = int(eta_seconds // 60)
+            eta_sec = int(eta_seconds % 60)
             print(
-                f"[Epoch {epoch}/{self.max_epochs}] loss={train_loss:.4f} val_dice={val_dice:.4f} time={elapsed:.1f}s",
+                f"[Epoch {epoch}/{self.max_epochs}] loss={train_loss:.4f} val_dice={val_dice:.4f} "
+                f"time={elapsed:.1f}s ETA~{eta_min}m{eta_sec:02d}s",
                 flush=True,
             )
 
