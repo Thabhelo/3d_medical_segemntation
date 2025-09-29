@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import Iterable, List, Optional, Sequence, Tuple, TypeVar
+import os
 import random
 
 from monai.data import CacheDataset, Dataset
@@ -9,7 +10,17 @@ from torch.utils.data import DataLoader
 
 from .datasets import BraTSDataset, MSDLiverDataset, TotalSegmentatorDataset
 from .transforms import get_transforms
-from ..utils.runtime import get_dataset_root
+# Local environment detection for dataset root to avoid external runtime deps
+def _detect_dataset_root() -> Path:
+    """
+    Determine a sensible default datasets root based on the environment.
+
+    - In Google Colab: /content/drive/MyDrive/datasets
+    - Locally: ~/Downloads/datasets
+    """
+    if os.path.isdir("/content"):
+        return Path("/content/drive/MyDrive/datasets")
+    return Path.home() / "Downloads" / "datasets"
 
 
 T = TypeVar("T")
@@ -147,7 +158,7 @@ def get_default_dataset_root() -> str:
     str
         Path to the default dataset root directory.
     """
-    return str(get_dataset_root())
+    return str(_detect_dataset_root())
 
 
 def create_dataloaders(
