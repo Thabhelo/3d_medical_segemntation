@@ -82,8 +82,8 @@ def build_segresnet(
         out_channels=out_channels,
         dropout_prob=dropout_prob,
         act=act,
-        # MONAI SegResNet uses norm_name for normalization selection in recent versions
-        norm_name=norm,
+        # Recent MONAI prefers 'norm' argument (e.g., "instance", "batch")
+        norm=norm,
         use_conv_final=use_conv_final,
         blocks_down=list(blocks_down),
         blocks_up=list(blocks_up),
