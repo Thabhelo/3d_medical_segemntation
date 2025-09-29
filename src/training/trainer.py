@@ -9,6 +9,7 @@ from monai.metrics import DiceMetric
 from monai.transforms import AsDiscrete
 # from monai.data import decollate_batch  # Not needed with simplified metric computation
 from monai.networks.utils import one_hot
+import time
 
 
 class Trainer:
@@ -40,6 +41,8 @@ class Trainer:
         best_dice = -1.0
 
         for epoch in range(start_epoch, self.max_epochs + 1):
+            epoch_start = time.time()
+            print(f"[Epoch {epoch}/{self.max_epochs}] Starting training…", flush=True)
             self.model.train()
             running_loss = 0.0
             for batch_data in train_loader:
@@ -66,6 +69,11 @@ class Trainer:
 
             train_loss = running_loss / max(1, len(train_loader))
             val_dice = self.validate(val_loader)
+            elapsed = time.time() - epoch_start
+            print(
+                f"[Epoch {epoch}/{self.max_epochs}] loss={train_loss:.4f} val_dice={val_dice:.4f} time={elapsed:.1f}s",
+                flush=True,
+            )
 
             if val_dice > best_dice:
                 best_dice = val_dice
