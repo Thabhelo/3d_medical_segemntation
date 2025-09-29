@@ -3,9 +3,11 @@
 Comparative analysis framework for 3D medical image segmentation using MONAI and PyTorch. We evaluate 3D U-Net, UNETR, and SegResNet on three datasets: BraTS, MSD Liver, and TotalSegmentator.
 
 ## Quick Start (Google Colab)
-1. Open a Colab notebook and run:
-   - Mount Drive: `from google.colab import drive; drive.mount('/content/drive')`
-   - Run notebook `notebooks/01_colab_setup_and_eda.ipynb` to clone this repo into Drive and install requirements.
+1. Open `notebooks/00_environment_setup.ipynb` in Colab and Run all. It will:
+   - Mount Drive
+   - Clone/pull this repo into `/content/drive/MyDrive/3d_medical_segemntation` (current name)
+   - Install compatible dependencies for Colab (Python 3.12)
+   - Run all selected experiments
 2. Ensure datasets are under `/content/drive/MyDrive/datasets` with folders:
    - `BraTS/` (or `brats`, `BraTS2021`)
    - `MSD/` (or `MSD_Liver`, `Task03_Liver`)
@@ -16,8 +18,9 @@ Comparative analysis framework for 3D medical image segmentation using MONAI and
 - `src/models/`: model factory and architectures (TBD)
 - `src/training/`: trainer and evaluator (TBD)
 - `configs/`: YAML configs (base provided)
-- `scripts/`: entry points (stubs provided)
-- `notebooks/`: Colab setup and analysis notebooks
+- `scripts/`: entry points
+- `scripts/dev/`: developer utilities (`setup_git.sh`, `setup_github_cli.sh`)
+- `notebooks/`: Colab environment setup and unified experiments runner
 
 ## Datasets
 Place datasets in Drive at `/content/drive/MyDrive/datasets`. Folder synonyms are supported. See `src/data/utils.py:normalize_dataset_name`.
