@@ -4,6 +4,13 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 import os
+import sys
+
+# Ensure this script can import the local 'src' package even when invoked from subprocesses
+CURRENT_FILE = Path(__file__).resolve()
+REPO_ROOT = CURRENT_FILE.parents[1]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 
 import torch
 
