@@ -84,6 +84,7 @@ def main() -> None:
         device=device,
         output_dir=Path(args.output_dir),
         max_epochs=args.max_epochs,
+        num_classes=args.out_channels,
     )
     metrics = trainer.train(train_loader, val_loader)
     print(metrics)

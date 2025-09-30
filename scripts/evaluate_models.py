@@ -73,6 +73,7 @@ def evaluate_model_checkpoint(
         device=device,
         output_dir=checkpoint_path.parent,
         max_epochs=1,
+        num_classes=out_channels,
     )
     
     # Evaluate

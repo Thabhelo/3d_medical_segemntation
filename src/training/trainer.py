@@ -22,6 +22,7 @@ class Trainer:
         output_dir: Path,
         max_epochs: int = 2,
         amp: bool = True,
+        num_classes: int = None,
     ) -> None:
         self.model = model.to(device)
         self.optimizer = optimizer
@@ -31,9 +32,11 @@ class Trainer:
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.max_epochs = max_epochs
         self.amp = amp and device.type == "cuda"  # Only use AMP on GPU
+        self.num_classes = num_classes
 
-        self.post_pred = AsDiscrete(argmax=True, to_onehot=None)
-        self.post_label = AsDiscrete(to_onehot=None)
+        # Post-processing transforms for metric computation
+        self.post_pred = AsDiscrete(argmax=True, to_onehot=num_classes)
+        self.post_label = AsDiscrete(to_onehot=num_classes)
         self.val_dice = DiceMetric(include_background=False, reduction="mean")
 
     def train(self, train_loader: DataLoader, val_loader: DataLoader, start_epoch: int = 1) -> Dict[str, float]:
@@ -83,9 +86,11 @@ class Trainer:
 
             if val_dice > best_dice:
                 best_dice = val_dice
-                self._save_checkpoint(epoch, best=True)
+                self._save_checkpoint(epoch, val_dice, best=True)
 
-            self._save_checkpoint(epoch, best=False)
+            # Only save periodic checkpoints every 10 epochs (not every epoch)
+            if epoch % 10 == 0:
+                self._save_checkpoint(epoch, val_dice, best=False)
 
         return {"best_dice": best_dice}
 
@@ -107,11 +112,12 @@ class Trainer:
 
         return float(self.val_dice.aggregate().item())
 
-    def _save_checkpoint(self, epoch: int, best: bool = False) -> None:
+    def _save_checkpoint(self, epoch: int, val_dice: float, best: bool = False) -> None:
         ckpt = {
             "model": self.model.state_dict(),
             "optimizer": self.optimizer.state_dict(),
             "epoch": epoch,
+            "metrics": {"val_dice": val_dice},
         }
         fname = "best.pth" if best else f"epoch_{epoch}.pth"
         torch.save(ckpt, self.output_dir / fname)
