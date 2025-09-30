@@ -1,23 +1,20 @@
 #!/usr/bin/env python3
+"""
+Batch 1: Train all architectures on BraTS dataset.
+Estimated time: ~90 minutes for 3 models (UNet, UNETR, SegResNet)
+"""
 from __future__ import annotations
 
-import itertools
 import subprocess
 import sys
 from pathlib import Path
 from datetime import datetime
 
 
-DATASETS = ["brats", "msd_liver", "totalsegmentator"]
+DATASET = "brats"
 ARCHITECTURES = ["unet", "unetr", "segresnet"]
 
-# Per-dataset IO settings
-IO = {
-    "brats": {"in_channels": 4, "out_channels": 4},
-    "msd_liver": {"in_channels": 1, "out_channels": 3},
-    "totalsegmentator": {"in_channels": 1, "out_channels": 2},
-}
-
+IO_CONFIG = {"in_channels": 4, "out_channels": 4}
 MAX_EPOCHS = 100
 BATCH_SIZE = 2
 NUM_WORKERS = 2
@@ -27,25 +24,26 @@ OUTPUT_BASE = Path("results/colab_runs")
 def main() -> None:
     OUTPUT_BASE.mkdir(parents=True, exist_ok=True)
     
-    total_runs = len(DATASETS) * len(ARCHITECTURES)
-    completed_count = 0
-    
     print("="*80)
-    print(f"TRAINING PIPELINE: {len(DATASETS)} datasets x {len(ARCHITECTURES)} architectures = {total_runs} total runs")
+    print(f"BATCH 1: BraTS Dataset Training")
+    print(f"Architectures: {', '.join(ARCHITECTURES)}")
     print(f"Configuration: MAX_EPOCHS={MAX_EPOCHS}, BATCH_SIZE={BATCH_SIZE}")
+    print(f"Estimated time: ~90 minutes total")
     print("="*80)
     
-    for ds, arch in itertools.product(DATASETS, ARCHITECTURES):
-        out_dir = OUTPUT_BASE / f"{ds}_{arch}"
+    completed_count = 0
+    total_runs = len(ARCHITECTURES)
+    
+    for arch in ARCHITECTURES:
+        out_dir = OUTPUT_BASE / f"{DATASET}_{arch}"
         best = out_dir / "best.pth"
         
         if best.exists():
-            print(f"\n[SKIP] {ds:16} {arch:11} - checkpoint exists at {best}")
+            print(f"\n[SKIP] {DATASET} + {arch} - checkpoint exists at {best}")
             completed_count += 1
             continue
             
         out_dir.mkdir(parents=True, exist_ok=True)
-        io = IO[ds]
         log = out_dir / f"train_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
         
         cmd = [
@@ -53,13 +51,13 @@ def main() -> None:
             "-u",
             "scripts/train_model.py",
             "--dataset",
-            ds,
+            DATASET,
             "--architecture",
             arch,
             "--in_channels",
-            str(io["in_channels"]),
+            str(IO_CONFIG["in_channels"]),
             "--out_channels",
-            str(io["out_channels"]),
+            str(IO_CONFIG["out_channels"]),
             "--max_epochs",
             str(MAX_EPOCHS),
             "--batch_size",
@@ -71,9 +69,10 @@ def main() -> None:
         ]
         
         print(f"\n{'='*80}")
-        print(f"[RUN {completed_count + 1}/{total_runs}] Dataset: {ds} | Architecture: {arch}")
+        print(f"[RUN {completed_count + 1}/{total_runs}] {DATASET} + {arch}")
         print(f"Output: {out_dir}")
         print(f"Log: {log}")
+        print(f"Estimated time: ~30 minutes")
         print(f"{'='*80}\n")
         
         with open(log, "w") as lf:
@@ -90,14 +89,13 @@ def main() -> None:
             proc.wait()
             
         completed_count += 1
-        print(f"\n[COMPLETED {completed_count}/{total_runs}] {ds} + {arch} (exit code: {proc.returncode})")
+        print(f"\n[COMPLETED {completed_count}/{total_runs}] {DATASET} + {arch} (exit code: {proc.returncode})")
         
     print(f"\n{'='*80}")
-    print(f"TRAINING PIPELINE COMPLETE: {completed_count}/{total_runs} runs finished")
+    print(f"BATCH 1 COMPLETE: {completed_count}/{total_runs} runs finished")
+    print(f"Next: Run scripts/run_batch_2_msd_liver.py")
     print(f"{'='*80}")
 
 
 if __name__ == "__main__":
     main()
-
-
