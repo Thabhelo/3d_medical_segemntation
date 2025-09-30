@@ -50,7 +50,7 @@ We conduct a 3×3 factorial experiment comparing three architectures across thre
 | UNETR        | ✅ Exp 4 | ✅ Exp 5     | ✅ Exp 6            |
 | SegResNet    | ✅ Exp 7 | ✅ Exp 8     | ✅ Exp 9            |
 
-**Status**: All 9 experiments completed (Sept 30, 2025)
+**Status**: All 9 experiments completed (Sept 29, 2025)
 
 ### 3.2 Datasets
 
@@ -123,7 +123,7 @@ Each dataset has unique channel requirements:
 ### 4.2 Key Technical Achievements
 
 **Robust Colab Integration**:
-- Persistent repository cloning to `/content/drive/MyDrive/3d_medical_segemntation` (typo intentional for existing path compatibility)
+- Persistent repository cloning to `/content/drive/MyDrive/3d_medical_segemntation` (that is the correct url despite the typo. Typo will be fixed later globally)
 - Self-healing Git operations: auto-fetch, fast-forward pull with fallback to hard reset and re-clone on corruption
 - File mode conflict handling for Drive-synced repositories
 - Environment auto-detection (Colab vs local) for seamless development
@@ -132,11 +132,6 @@ Each dataset has unique channel requirements:
 - Auto-detection: `/content/drive/MyDrive/datasets` (Colab) vs `~/Downloads/datasets` (local)
 - Dataset-specific root handling (e.g., MSD Liver expects `datasets/MSD/Task03_Liver` subfolder)
 - Explicit error messages for missing datasets with path verification instructions
-
-**MONAI API Compatibility**:
-- Fixed SegResNet parameter mismatch: MONAI updated from `norm_name`+`norm_groups` to `norm` parameter
-- Validated against MONAI weekly builds for Python 3.12 compatibility
-- Proper one-hot encoding for multi-class Dice computation
 
 **Training Infrastructure**:
 - Mixed precision training (torch.cuda.amp) for memory efficiency
@@ -151,9 +146,9 @@ Each dataset has unique channel requirements:
 - Subprocess streaming with unbuffered output (`python -u`) for live progress
 
 **Code Organization**:
-- Removed deprecated runtime utilities; inline environment detection where needed
+- Inline environment detection where needed
 - Moved developer scripts to `scripts/dev/` for clarity
-- Deleted obsolete notebooks; unified workflow in `00_environment_setup.ipynb`
+- Unified workflow in `00_environment_setup.ipynb`
 
 ### 4.3 Data Augmentation
 
@@ -241,7 +236,6 @@ Training applies spatial transforms (random flip, rotation ±10°, scaling ±10%
 - 2025-08-29: Preprocessing/augmentation transforms and dataloader builders implemented.
 - 2025-08-29: Colab bootstrap fixed to clone repo to Drive and install requirements.
 - 2025-08-29: EDA notebook stabilized; dataset folder synonyms tested on Drive.
-- 2025-08-29: Standardized on folder name `TotalSegmentator`; removed deprecated synonyms.
 - 2025-08-29: Simplified environment path logic in notebook.
 - 2025-09-05: Model architectures (UNet, UNETR, SegResNet) and factory implemented.
 - 2025-09-05: Loss functions and evaluation metrics added.
@@ -264,7 +258,7 @@ Training applies spatial transforms (random flip, rotation ±10°, scaling ±10%
 - 2025-09-26: **Colab workflow refinement**: Developed robust Git integration for Drive-persistent repository management. Addressed file permission and sync conflicts between local and Colab environments.
 - 2025-09-29: **Colab infrastructure overhaul**: Unified notebook with Drive persistence, streaming logs with ETA, auto-detection of dataset paths, per-dataset IO channel configuration. Fixed SegResNet MONAI compatibility (norm vs norm_name parameter). Repository cleanup: removed obsolete notebooks, moved dev scripts to scripts/dev/.
 - 2025-09-29: **Dataset integration fixes**: Resolved MSD Liver path resolution (expects Task03_Liver subfolder). TotalSegmentator loader working with subject-level ct.nii.gz and segmentations/ structure. Added explicit empty dataset checks with clear error messages.
-- 2025-09-30: **🎉 MAJOR MILESTONE - Complete 9-Model Training Matrix Achieved**: Successfully executed and validated all 27 training configurations (3 datasets × 3 architectures × 3 variations) with production-grade checkpoints persisted to Google Drive. This represents the culmination of infrastructure development, dataset integration, and systematic experimentation.
+- 2025-09-30: **MAJOR MILESTONE - Complete 9-Model Training Matrix Achieved**: Successfully executed and validated all 27 training configurations (3 datasets × 3 architectures × 3 variations) with production-grade checkpoints persisted to Google Drive. This represents the culmination of infrastructure development, dataset integration, and systematic experimentation.
 
   **Training Completion Summary**:
   - **BraTS Dataset** (4-channel MRI → 4-class tumor segmentation):
