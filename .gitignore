@@ -28,3 +28,5 @@ drive/
 # System
 .idea/
 .vscode/
+NEXT_STEPS.md
+COLAB_INSTRUCTIONS.md
