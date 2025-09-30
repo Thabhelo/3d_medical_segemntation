@@ -17,6 +17,7 @@ from monai.transforms import (
     RandScaleIntensityd,
     RandShiftIntensityd,
     EnsureTyped,
+    MapLabelValued,
 )
 
 
@@ -44,6 +45,8 @@ def get_preprocessing_transforms(dataset_name: str, phase: str) -> Compose:
 
     if name == "brats":
         ds_specific = [
+            # BraTS labels use values [0, 1, 2, 4] - remap 4 to 3 for proper one-hot encoding
+            MapLabelValued(keys="label", orig_labels=[0, 1, 2, 4], target_labels=[0, 1, 2, 3]),
             NormalizeIntensityd(keys="image", nonzero=True, channel_wise=True),
             CropForegroundd(keys=["image", "label"], source_key="image"),
         ]

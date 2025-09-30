@@ -35,9 +35,13 @@ class Trainer:
         self.num_classes = num_classes
 
         # Post-processing transforms for metric computation
+        # Note: DiceMetric expects predictions and labels as one-hot tensors
+        # Predictions: apply argmax to convert logits to class indices, then one-hot
+        # Labels: already in correct format from dataloader (one-hot or class indices)
         self.post_pred = AsDiscrete(argmax=True, to_onehot=num_classes)
         self.post_label = AsDiscrete(to_onehot=num_classes)
-        self.val_dice = DiceMetric(include_background=False, reduction="mean")
+        # Use DiceMetric with get_not_nans to handle variable-sized batches
+        self.val_dice = DiceMetric(include_background=False, reduction="mean", get_not_nans=False)
 
     def train(self, train_loader: DataLoader, val_loader: DataLoader, start_epoch: int = 1) -> Dict[str, float]:
         scaler = torch.amp.GradScaler('cuda', enabled=self.amp)
