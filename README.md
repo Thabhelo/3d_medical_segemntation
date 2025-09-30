@@ -31,14 +31,34 @@ Synonyms examples:
   (We now standardize on `TotalSegmentator` only.)
 
 ## Status
-- Datasets: BraTS, MSD Liver, TotalSegmentator loaders implemented
-- Transforms & Dataloaders: implemented
-- Model Factory: UNet, UNETR, SegResNet implemented
-- Training Infrastructure: implemented with checkpointing
-- Experiments Progress: 5/9 completed
-  - Completed: UNet+BraTS, UNet+MSD, UNETR+BraTS, UNETR+MSD, UNet+BraTS_test
-  - Remaining: SegResNet experiments (2) + TotalSegmentator experiments (3)
-- Next: Complete remaining experiments and results analysis
+
+### ✅ Completed Infrastructure
+- **Datasets**: BraTS, MSD Liver, TotalSegmentator loaders with robust path resolution
+- **Models**: UNet (BasicUNet), UNETR, SegResNet with proper MONAI integration
+- **Training**: Comprehensive pipeline with mixed precision, checkpointing, streaming logs
+- **Environment**: Colab-ready setup with Drive persistence and auto-detection
+- **Evaluation**: Dice metric computation with proper one-hot encoding
+
+### ✅ Training Results (All 9 Combinations Complete)
+**Experiment Matrix**: 3 datasets × 3 architectures = 9 trained models
+
+| Dataset | UNet | UNETR | SegResNet |
+|---------|------|-------|-----------|
+| BraTS (4→4 channels) | ✅ | ✅ | ✅ |
+| MSD Liver (1→3 channels) | ✅ | ✅ | ✅ |
+| TotalSegmentator (1→2 channels) | ✅ | ✅ | ✅ |
+
+**Training Performance**:
+- BraTS: ~17s/epoch (4-channel input, 4-class output)
+- MSD Liver: ~1500s/epoch (single-channel CT, 3-class liver segmentation)  
+- TotalSegmentator: ~2000s/epoch (single-channel CT, 118-class→2-class simplified)
+- All models: CUDA acceleration, mixed precision, proper convergence
+
+### 🔄 Next Phase: Evaluation & Analysis
+- **Model Evaluation**: Comprehensive metrics (Dice, IoU, Hausdorff distance)
+- **Results Analysis**: Performance comparison across architectures and datasets
+- **Visualization**: Sample predictions, confusion matrices, learning curves
+- **Documentation**: Technical report with findings and reproducibility guide
 
 ## License
 MIT
