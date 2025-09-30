@@ -91,14 +91,22 @@ def evaluate_model_checkpoint(
 def main():
     """Main evaluation function."""
     
+    # Auto-detect dataset root based on environment
+    import os
+    is_colab = os.path.exists('/content')
+    base_data_root = "/content/drive/MyDrive/datasets" if is_colab else str(Path.home() / "Downloads" / "datasets")
+    
     # Configuration
     RESULTS_DIR = Path("results/colab_runs")
     DATASETS_CONFIG = {
-        "brats": {"in_channels": 4, "out_channels": 4, "data_root": "/content/drive/MyDrive/datasets"},
-        "msd_liver": {"in_channels": 1, "out_channels": 3, "data_root": "/content/drive/MyDrive/datasets/MSD/Task03_Liver"},
-        "totalsegmentator": {"in_channels": 1, "out_channels": 2, "data_root": "/content/drive/MyDrive/datasets/TotalSegmentator"},
+        "brats": {"in_channels": 4, "out_channels": 4, "data_root": base_data_root},
+        "msd_liver": {"in_channels": 1, "out_channels": 3, "data_root": f"{base_data_root}/MSD/Task03_Liver"},
+        "totalsegmentator": {"in_channels": 1, "out_channels": 2, "data_root": f"{base_data_root}/TotalSegmentator"},
     }
     ARCHITECTURES = ["unet", "unetr", "segresnet"]
+    
+    print(f"Environment: {'Colab' if is_colab else 'Local'}")
+    print(f"Base data root: {base_data_root}")
     
     # Find all checkpoints
     checkpoints = list(RESULTS_DIR.glob("*/best.pth"))
