@@ -6,8 +6,6 @@ from typing import Dict, Tuple
 import torch
 from torch.utils.data import DataLoader
 from monai.metrics import DiceMetric
-from monai.transforms import AsDiscrete
-# from monai.data import decollate_batch  # Not needed with simplified metric computation
 from monai.networks.utils import one_hot
 import time
 
@@ -34,13 +32,9 @@ class Trainer:
         self.amp = amp and device.type == "cuda"  # Only use AMP on GPU
         self.num_classes = num_classes
 
-        # Post-processing transforms for metric computation
-        # Note: DiceMetric expects predictions and labels as one-hot tensors
-        # Predictions: apply argmax to convert logits to class indices, then one-hot
-        # Labels: already in correct format from dataloader (one-hot or class indices)
-        self.post_pred = AsDiscrete(argmax=True, to_onehot=num_classes)
-        self.post_label = AsDiscrete(to_onehot=num_classes)
-        # Use DiceMetric with get_not_nans to handle variable-sized batches
+        # Post-processing for metric computation
+        # DiceMetric expects one-hot tensors [B, C, H, W, D]
+        # We'll convert manually to avoid AsDiscrete batch dimension bugs
         self.val_dice = DiceMetric(include_background=False, reduction="mean", get_not_nans=False)
 
     def train(self, train_loader: DataLoader, val_loader: DataLoader, start_epoch: int = 1) -> Dict[str, float]:
@@ -109,10 +103,16 @@ class Trainer:
             labels = batch["label"].to(self.device)
             logits = self.model(images)
 
-            # convert to discrete for metric computation
-            y_pred = self.post_pred(logits)
-            y = self.post_label(labels)
-            self.val_dice(y_pred, y)
+            # Convert to one-hot manually (avoid AsDiscrete batch dimension bugs)
+            # Predictions: argmax to get class indices, then one-hot encode
+            y_pred_indices = torch.argmax(logits, dim=1, keepdim=True)  # [B, 1, H, W, D]
+            y_pred_onehot = one_hot(y_pred_indices, num_classes=self.num_classes)  # [B, C, H, W, D]
+            
+            # Labels: squeeze channel dim, ensure long dtype, then one-hot encode
+            labels_squeezed = labels.squeeze(1).long()  # [B, H, W, D]
+            y_true_onehot = one_hot(labels_squeezed.unsqueeze(1), num_classes=self.num_classes)  # [B, C, H, W, D]
+            
+            self.val_dice(y_pred_onehot, y_true_onehot)
 
         return float(self.val_dice.aggregate().item())
 
