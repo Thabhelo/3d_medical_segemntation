@@ -53,6 +53,8 @@ def main() -> None:
             "scripts/train_model.py",
             "--dataset",
             DATASET,
+            "--data_root",
+            "/content/drive/MyDrive/datasets/MSD/Task03_Liver",
             "--architecture",
             arch,
             "--in_channels",

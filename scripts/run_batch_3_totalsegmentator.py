@@ -53,6 +53,8 @@ def main() -> None:
             "scripts/train_model.py",
             "--dataset",
             DATASET,
+            "--data_root",
+            "/content/drive/MyDrive/datasets/TotalSegmentator",
             "--architecture",
             arch,
             "--in_channels",
