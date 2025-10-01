@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Batch 3: Train all architectures on TotalSegmentator dataset.
-Estimated time: ~168 hours for 3 models (UNet, UNETR, SegResNet)
+Estimated time: ~4-5 hours for 3 models (UNet, UNETR, SegResNet)
 Run this after Batch 2 (MSD Liver) is complete.
 """
 from __future__ import annotations
@@ -29,7 +29,7 @@ def main() -> None:
     print(f"BATCH 3: TotalSegmentator Dataset Training")
     print(f"Architectures: {', '.join(ARCHITECTURES)}")
     print(f"Configuration: MAX_EPOCHS={MAX_EPOCHS}, BATCH_SIZE={BATCH_SIZE}")
-    print(f"Estimated time: ~168 hours total (~56 hours per model)")
+    print(f"Estimated time: ~4-5 hours total (~1.5-2 hours per model)")
     print("="*80)
     
     completed_count = 0

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Batch 2: Train all architectures on MSD Liver dataset.
-Estimated time: ~126 hours for 3 models (UNet, UNETR, SegResNet)
+Estimated time: ~3-4 hours for 3 models (UNet, UNETR, SegResNet)
 Run this after Batch 1 (BraTS) is complete.
 """
 from __future__ import annotations
@@ -29,7 +29,7 @@ def main() -> None:
     print(f"BATCH 2: MSD Liver Dataset Training")
     print(f"Architectures: {', '.join(ARCHITECTURES)}")
     print(f"Configuration: MAX_EPOCHS={MAX_EPOCHS}, BATCH_SIZE={BATCH_SIZE}")
-    print(f"Estimated time: ~126 hours total (~42 hours per model)")
+    print(f"Estimated time: ~3-4 hours total (~1-1.5 hours per model)")
     print("="*80)
     
     completed_count = 0

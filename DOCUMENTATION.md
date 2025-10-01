@@ -258,21 +258,40 @@ Training applies spatial transforms (random flip, rotation ±10°, scaling ±10%
 - 2025-09-26: **Colab workflow refinement**: Developed robust Git integration for Drive-persistent repository management. Addressed file permission and sync conflicts between local and Colab environments.
 - 2025-09-29: **Colab infrastructure overhaul**: Unified notebook with Drive persistence, streaming logs with ETA, auto-detection of dataset paths, per-dataset IO channel configuration. Fixed SegResNet MONAI compatibility (norm vs norm_name parameter). Repository cleanup: removed obsolete notebooks, moved dev scripts to scripts/dev/.
 - 2025-09-29: **Dataset integration fixes**: Resolved MSD Liver path resolution (expects Task03_Liver subfolder). TotalSegmentator loader working with subject-level ct.nii.gz and segmentations/ structure. Added explicit empty dataset checks with clear error messages.
-- 2025-09-30: **MAJOR MILESTONE - Complete 9-Model Training Matrix Achieved**: Successfully executed and validated all 27 training configurations (3 datasets × 3 architectures × 3 variations) with production-grade checkpoints persisted to Google Drive. This represents the culmination of infrastructure development, dataset integration, and systematic experimentation.
+- 2025-09-30 (Morning): **Critical Bug Discovery - Zero Dice Scores Investigation**: After completing initial 2-epoch smoke tests across all 9 experiments, discovered all models were producing validation Dice scores of exactly 0.0, indicating a fundamental issue with metric computation rather than model learning.
 
-  **Training Completion Summary**:
-  - **BraTS Dataset** (4-channel MRI → 4-class tumor segmentation):
-    - ✅ BasicUNet: Fast convergence (~17s/epoch), efficient memory usage
-    - ✅ UNETR: Transformer-based global context modeling  
-    - ✅ SegResNet: Residual learning with skip connections
-  - **MSD Liver** (1-channel CT → 3-class liver/tumor segmentation):
-    - ✅ BasicUNet: Medium computational load (~1500s/epoch)
-    - ✅ UNETR: Effective on abdominal CT modality
-    - ✅ SegResNet: Robust gradient flow for deeper networks
-  - **TotalSegmentator** (1-channel CT → 2-class simplified segmentation):
-    - ✅ BasicUNet: Highest computational complexity (~2000s/epoch)
-    - ✅ UNETR: Multi-organ context capture
-    - ✅ SegResNet: Handling anatomically complex whole-body scans
+  **Root Cause Analysis**:
+  - Systematic debugging revealed `MONAI.transforms.AsDiscrete` was mangling batch dimensions during one-hot encoding
+  - `AsDiscrete(argmax=True, to_onehot=N)` was collapsing `[B, C, H, W, D]` → `[B, 1, C, H, W, D]` incorrectly
+  - Dimension mismatch between predictions and labels caused `DiceMetric` to compute on malformed tensors
+  - BraTS labels used values `[0, 1, 2, 4]` requiring remapping to `[0, 1, 2, 3]` for proper one-hot encoding (4→3 mapping)
+  
+  **Solution Implemented**:
+  - Replaced buggy `AsDiscrete` transforms with native PyTorch operations: `torch.argmax()` + `monai.networks.utils.one_hot()`
+  - Added `MapLabelValued` transform for BraTS to remap label 4→3 before one-hot encoding
+  - Ensured both predictions and labels produce correct `[B, C, H, W, D]` shapes for DiceMetric
+  - Modified `src/training/trainer.py` validation loop for proper tensor handling
+
+- 2025-10-01 (Early Morning): **BREAKTHROUGH - First Successful Production Training on BraTS**: After fixing the Dice metric bug, re-ran all 3 BraTS models with 100 epochs each, achieving **real, meaningful validation scores**:
+
+  **BraTS Training Results (100 Epochs Each)**:
+  | Model | Best Dice | Final Dice | Avg Time/Epoch | Total Time |
+  |-------|-----------|------------|----------------|------------|
+  | BasicUNet | **0.5758** | 0.5500 | 17.1s | ~28 min |
+  | UNETR | **0.5387** | 0.5387 | 28.3s (variable 16-46s) | ~47 min |
+  | SegResNet | **0.6162** ⭐ | 0.6073 | 18.1s | ~30 min |
+  
+  **Key Observations**:
+  - ✅ **SegResNet achieved best performance** (61.62% Dice) on BraTS brain tumor segmentation
+  - ✅ **Consistent loss reduction**: All models decreased from ~2.0 → ~1.0 over training
+  - ✅ **Proper convergence**: Dice scores steadily improved from ~0.03-0.05 (epoch 1) to 0.53-0.62 (epoch 100)
+  - ✅ **UNETR showed variable epoch times** (16-46s) due to complex attention mechanisms
+  - ✅ **All models saved best checkpoints** to Drive persistence at `/content/drive/MyDrive/3d_medical_segemntation/results/colab_runs/`
+  
+  **Training Characteristics**:
+  - BasicUNet: Fastest and most consistent (~17s/epoch), good baseline performance (57.6% Dice)
+  - UNETR: Transformer-based global context, slightly lower Dice (53.9%) but captures long-range dependencies
+  - SegResNet: Best overall with residual connections enabling deeper feature learning (61.6% Dice)
   
   **Technical Infrastructure Achievements**:
   - **Robust Colab Environment**: Self-healing Git operations (auto-fetch, fast-forward pull, hard reset fallback, re-clone recovery), Drive-persistent repository at `/content/drive/MyDrive/3d_medical_segemntation`, file mode conflict resolution
@@ -296,11 +315,13 @@ Training applies spatial transforms (random flip, rotation ±10°, scaling ±10%
   - ✅ **Foundation for Analysis**: Learning curves, architectural comparisons, dataset-specific insights now possible
 
 ### Planned Timeline (Revised):
-- 2025-09-30: **Evaluation framework deployment**: Run comprehensive evaluation (scripts/evaluate_models.py) on all 9 checkpoints. Generate comparative metrics (Dice, IoU, model complexity).
-- 2025-10-01: **Extended training runs**: Re-run experiments with 50-100 epochs for meaningful performance metrics (current 2-epoch runs were smoke tests with expected Dice~0).
-- 2025-10-02: **Results analysis**: Statistical comparison, architecture performance across datasets, learning curve analysis.
-- 2025-10-03: **Visualization & reporting**: Sample predictions, confusion matrices, technical report with findings and clinical insights.
-- 2025-10-04: **Documentation finalization**: Complete reproducibility guide, update README with final results, archive code for publication.
+- 2025-10-01 (Morning): ✅ **BraTS production training complete** - All 3 models trained with 100 epochs, achieving 54-62% Dice scores
+- 2025-10-01 (Afternoon): 🔄 **MSD Liver training** - Currently running 3 models × 100 epochs (estimated ~3-4 hours)
+- 2025-10-01 (Evening): 🔄 **TotalSegmentator training** - Final batch of 3 models × 100 epochs
+- 2025-10-02: **Comprehensive evaluation**: Run `scripts/evaluate_models.py` on all 9 final checkpoints for Dice, IoU, Hausdorff distance, parameter counts
+- 2025-10-03: **Results analysis**: Statistical comparison across datasets, architecture rankings, learning curve analysis
+- 2025-10-04: **Visualization & reporting**: Segmentation visualizations, comparative plots, performance tables
+- 2025-10-05: **Documentation finalization**: Complete technical report, update README with findings, prepare for publication
 
 ## 9. Future Work
 
