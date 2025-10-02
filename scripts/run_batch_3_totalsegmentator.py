@@ -15,7 +15,7 @@ from datetime import datetime
 DATASET = "totalsegmentator"
 ARCHITECTURES = ["unet", "unetr", "segresnet"]
 
-IO_CONFIG = {"in_channels": 1, "out_channels": 2}
+IO_CONFIG = {"in_channels": 1, "out_channels": 118}
 MAX_EPOCHS = 100
 BATCH_SIZE = 2
 NUM_WORKERS = 2
