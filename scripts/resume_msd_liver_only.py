@@ -21,7 +21,7 @@ def main():
     # MSD Liver configuration
     config = {
         "in_channels": 1,
-        "out_channels": 2,
+        "out_channels": 3,  # Background, Liver, Tumor
         "data_root": "/content/drive/MyDrive/datasets/MSD/Task03_Liver"
     }
     
