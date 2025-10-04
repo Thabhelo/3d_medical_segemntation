@@ -15,8 +15,8 @@ from datetime import datetime
 DATASET = "msd_liver"
 ARCHITECTURES = ["unet", "unetr", "segresnet"]
 
-IO_CONFIG = {"in_channels": 1, "out_channels": 3}
-MAX_EPOCHS = 100
+IO_CONFIG = {"in_channels": 1, "out_channels": 2}
+MAX_EPOCHS = 50
 BATCH_SIZE = 2
 NUM_WORKERS = 2
 OUTPUT_BASE = Path("results/colab_runs")
@@ -29,7 +29,7 @@ def main() -> None:
     print(f"BATCH 2: MSD Liver Dataset Training")
     print(f"Architectures: {', '.join(ARCHITECTURES)}")
     print(f"Configuration: MAX_EPOCHS={MAX_EPOCHS}, BATCH_SIZE={BATCH_SIZE}")
-    print(f"Estimated time: ~3-4 hours total (~1-1.5 hours per model)")
+    print(f"Estimated time: ~1.5-2 hours total (50 epochs with dynamic LR)")
     print("="*80)
     
     completed_count = 0
@@ -67,6 +67,9 @@ def main() -> None:
             str(BATCH_SIZE),
             "--num_workers",
             str(NUM_WORKERS),
+            "--scheduler",
+            "reduce_on_plateau",
+            "--save_every_epoch",
             "--output_dir",
             str(out_dir),
         ]
@@ -75,7 +78,7 @@ def main() -> None:
         print(f"[RUN {completed_count + 1}/{total_runs}] {DATASET} + {arch}")
         print(f"Output: {out_dir}")
         print(f"Log: {log}")
-        print(f"Estimated time: ~42 hours")
+        print(f"Estimated time: ~30-40 minutes (50 epochs with dynamic LR)")
         print(f"{'='*80}\n")
         
         with open(log, "w") as lf:

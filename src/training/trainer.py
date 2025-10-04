@@ -21,6 +21,8 @@ class Trainer:
         max_epochs: int = 2,
         amp: bool = True,
         num_classes: int = None,
+        scheduler: torch.optim.lr_scheduler._LRScheduler = None,
+        save_every_epoch: bool = False,
     ) -> None:
         self.model = model.to(device)
         self.optimizer = optimizer
@@ -31,6 +33,8 @@ class Trainer:
         self.max_epochs = max_epochs
         self.amp = amp and device.type == "cuda"  # Only use AMP on GPU
         self.num_classes = num_classes
+        self.scheduler = scheduler
+        self.save_every_epoch = save_every_epoch
 
         # Post-processing for metric computation
         # DiceMetric expects one-hot tensors [B, C, H, W, D]
@@ -86,9 +90,18 @@ class Trainer:
                 best_dice = val_dice
                 self._save_checkpoint(epoch, val_dice, best=True)
 
-            # Only save periodic checkpoints every 10 epochs (not every epoch)
-            if epoch % 10 == 0:
+            # Save checkpoints based on configuration
+            if self.save_every_epoch:
                 self._save_checkpoint(epoch, val_dice, best=False)
+            elif epoch % 10 == 0:
+                self._save_checkpoint(epoch, val_dice, best=False)
+
+            # Step the learning rate scheduler if available
+            if self.scheduler is not None:
+                if isinstance(self.scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
+                    self.scheduler.step(val_dice)
+                else:
+                    self.scheduler.step()
 
         return {"best_dice": best_dice}
 
@@ -123,6 +136,10 @@ class Trainer:
             "epoch": epoch,
             "metrics": {"val_dice": val_dice},
         }
+        # Save scheduler state if available
+        if self.scheduler is not None:
+            ckpt["scheduler"] = self.scheduler.state_dict()
+        
         fname = "best.pth" if best else f"epoch_{epoch}.pth"
         torch.save(ckpt, self.output_dir / fname)
 

@@ -45,12 +45,15 @@ def main() -> None:
     parser.add_argument("--max_epochs", type=int, default=2, help="Max training epochs")
     parser.add_argument("--loss", default="dice_ce", help="Loss function key")
     parser.add_argument("--lr", type=float, default=1e-4, help="Learning rate")
+    parser.add_argument("--scheduler", default="none", help="LR scheduler: none | reduce_on_plateau | cosine | onecycle | polynomial")
+    parser.add_argument("--save_every_epoch", action="store_true", help="Save checkpoint every epoch instead of every 10")
     parser.add_argument("--output_dir", default="results/tmp_run", help="Output directory for checkpoints and logs")
+    parser.add_argument("--resume_from", default=None, help="Path to a checkpoint .pth file to resume from")
     args = parser.parse_args()
 
-    # Check if training already completed
+    # Check if training already completed (unless resuming)
     output_path = Path(args.output_dir)
-    if output_path.exists() and (output_path / "best.pth").exists():
+    if args.resume_from is None and output_path.exists() and (output_path / "best.pth").exists():
         print(f"Training already completed in {output_path}")
         print("Use a different --output_dir to run again")
         return
@@ -76,6 +79,28 @@ def main() -> None:
     )
     loss_fn = get_loss(args.loss)
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
+    
+    # Create learning rate scheduler
+    scheduler = None
+    if args.scheduler != "none":
+        if args.scheduler == "reduce_on_plateau":
+            scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+                optimizer, mode='max', factor=0.5, patience=10, verbose=True
+            )
+        elif args.scheduler == "cosine":
+            scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+                optimizer, T_max=args.max_epochs, eta_min=args.lr * 0.01
+            )
+        elif args.scheduler == "onecycle":
+            scheduler = torch.optim.lr_scheduler.OneCycleLR(
+                optimizer, max_lr=args.lr * 10, total_steps=args.max_epochs
+            )
+        elif args.scheduler == "polynomial":
+            scheduler = torch.optim.lr_scheduler.PolynomialLR(
+                optimizer, total_iters=args.max_epochs, power=0.9
+            )
+        else:
+            raise ValueError(f"Unknown scheduler: {args.scheduler}")
 
     trainer = Trainer(
         model=model,
@@ -85,8 +110,29 @@ def main() -> None:
         output_dir=Path(args.output_dir),
         max_epochs=args.max_epochs,
         num_classes=args.out_channels,
+        scheduler=scheduler,
+        save_every_epoch=args.save_every_epoch,
     )
-    metrics = trainer.train(train_loader, val_loader)
+
+    # Optional resume logic
+    start_epoch = 1
+    if args.resume_from is not None:
+        ckpt_path = Path(args.resume_from)
+        if not ckpt_path.exists():
+            raise FileNotFoundError(f"--resume_from checkpoint not found: {ckpt_path}")
+        print(f"Resuming from checkpoint: {ckpt_path}")
+        ckpt = torch.load(str(ckpt_path), map_location=device)
+        if "model" in ckpt:
+            model.load_state_dict(ckpt["model"], strict=True)
+        if "optimizer" in ckpt:
+            optimizer.load_state_dict(ckpt["optimizer"])
+        if "scheduler" in ckpt and scheduler is not None:
+            scheduler.load_state_dict(ckpt["scheduler"])
+        if "epoch" in ckpt:
+            start_epoch = int(ckpt["epoch"]) + 1
+        print(f"Resume start_epoch set to {start_epoch}")
+
+    metrics = trainer.train(train_loader, val_loader, start_epoch=start_epoch)
     print(metrics)
 
 
