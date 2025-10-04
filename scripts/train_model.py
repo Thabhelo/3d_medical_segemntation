@@ -85,7 +85,7 @@ def main() -> None:
     if args.scheduler != "none":
         if args.scheduler == "reduce_on_plateau":
             scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-                optimizer, mode='max', factor=0.5, patience=10, verbose=True
+                optimizer, mode='max', factor=0.5, patience=10
             )
         elif args.scheduler == "cosine":
             scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(

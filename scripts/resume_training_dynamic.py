@@ -37,12 +37,12 @@ def main():
         }
     }
     
-    print("🚀 RESUMING TRAINING WITH DYNAMIC LEARNING RATE")
+    print("RESUMING TRAINING WITH DYNAMIC LEARNING RATE")
     print("=" * 60)
     
     for dataset in datasets:
         config = dataset_configs[dataset]
-        print(f"\n📊 Dataset: {dataset.upper()}")
+        print(f"\nDataset: {dataset.upper()}")
         print(f"   Input channels: {config['in_channels']}")
         print(f"   Output channels: {config['out_channels']}")
         print(f"   Data root: {config['data_root']}")
@@ -53,10 +53,10 @@ def main():
             
             # Check if epoch 50 checkpoint exists
             if not Path(checkpoint_path).exists():
-                print(f"   ⚠️  No epoch 50 checkpoint found for {dataset}_{architecture}")
+                print(f"   WARNING: No epoch 50 checkpoint found for {dataset}_{architecture}")
                 continue
                 
-            print(f"\n   🔄 Resuming {dataset}_{architecture} from epoch 50...")
+            print(f"\n   Resuming {dataset}_{architecture} from epoch 50...")
             
             # Build command for resuming with dynamic LR
             cmd = [
@@ -83,14 +83,14 @@ def main():
                 result = subprocess.run(cmd, capture_output=False, text=True)
                 
                 if result.returncode == 0:
-                    print(f"   ✅ {dataset}_{architecture} completed successfully")
+                    print(f"   SUCCESS: {dataset}_{architecture} completed successfully")
                 else:
-                    print(f"   ❌ {dataset}_{architecture} failed with exit code {result.returncode}")
+                    print(f"   FAILED: {dataset}_{architecture} failed with exit code {result.returncode}")
                     
             except Exception as e:
-                print(f"   ❌ Error running {dataset}_{architecture}: {e}")
+                print(f"   ERROR: Error running {dataset}_{architecture}: {e}")
     
-    print("\n🎉 Resume training with dynamic LR completed!")
+    print("\nResume training with dynamic LR completed!")
     print("All models should now have:")
     print("- Dynamic learning rate scheduling (ReduceLROnPlateau)")
     print("- Training from epoch 50 to 100")
