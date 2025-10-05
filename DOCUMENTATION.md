@@ -297,6 +297,16 @@ Training applies spatial transforms (random flip, rotation ±10°, scaling ±10%
   - **Robust Colab Environment**: Self-healing Git operations (auto-fetch, fast-forward pull, hard reset fallback, re-clone recovery), Drive-persistent repository at `/content/drive/MyDrive/3d_medical_segemntation`, file mode conflict resolution
   - **Streaming Training Logs**: Real-time epoch-by-epoch progress with loss curves, validation Dice scores, elapsed time, and estimated time to completion (ETA)
   - **Intelligent Path Resolution**: Auto-detection of dataset roots (Colab: `/content/drive/MyDrive/datasets`, Local: `~/Downloads/datasets`), per-dataset subfolder handling (MSD Liver requires `Task03_Liver/`), explicit validation errors for missing datasets
+
+- 2025-10-04: **MSD Liver UNet Completed**: Successfully resumed from epoch 50 and completed epochs 51-100 with dynamic LR scheduling:
+
+  **MSD Liver UNet Results (Epochs 51-100)**:
+  - Final Dice: ~0.46-0.50 (significantly below published benchmarks)
+  - **Performance Issue Identified**: Dice scores well below expected 0.70-0.85 range
+  - **Root Cause Analysis**: Pure random patches learning only background/liver, missing tumor voxels
+  - **Proposed Solution**: Implement foreground-biased sampling (50-75% positive samples) for better tumor detection
+  - **Training Time**: ~36 minutes per epoch, total ~22 hours for 50 epochs
+  - **Next Steps**: Complete remaining 8 experiments, then implement MSD Liver optimizations
   - **Per-Dataset IO Configuration**: Automatic channel mapping (BraTS 4→4, MSD Liver 1→3, TotalSegmentator 1→2), prevents architecture-dataset mismatch errors
   - **Skip Logic**: Detects existing `best.pth` checkpoints to avoid redundant training runs, enables iterative experimentation without data loss
   - **MONAI Integration**: Mixed precision training with CUDA AMP, proper one-hot encoding for multi-class Dice computation, compatibility with MONAI weekly builds for Python 3.12
