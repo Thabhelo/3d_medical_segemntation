@@ -52,9 +52,12 @@ def get_preprocessing_transforms(dataset_name: str, phase: str) -> Compose:
         ]
     elif name == "msd_liver":
         ds_specific = [
+            # Improved preprocessing for MSD Liver (following nnU-Net recommendations)
             ScaleIntensityRanged(
-                keys="image", a_min=-175, a_max=250, b_min=0.0, b_max=1.0, clip=True
+                keys="image", a_min=-200, a_max=250, b_min=0.0, b_max=1.0, clip=True
             ),
+            # Z-score normalization per volume (crucial for liver segmentation)
+            NormalizeIntensityd(keys="image", nonzero=True, channel_wise=True),
             CropForegroundd(keys=["image", "label"], source_key="image"),
         ]
     elif name == "totalsegmentator":
@@ -69,24 +72,41 @@ def get_preprocessing_transforms(dataset_name: str, phase: str) -> Compose:
     return Compose(base + ds_specific)
 
 
-def get_augmentation_transforms(patch_size: Tuple[int, int, int]) -> Compose:
+def get_augmentation_transforms(patch_size: Tuple[int, int, int], dataset_name: str = None) -> Compose:
     """Training-time augmentation transforms."""
-    from monai.transforms import SpatialPadd, RandSpatialCropd
+    from monai.transforms import SpatialPadd, RandSpatialCropd, RandCropByPosNegLabeld
     
-    return Compose(
-        [
-            # Ensure minimum size before cropping
+    # Base augmentations
+    base_augs = [
+        RandFlipd(keys=["image", "label"], prob=0.5, spatial_axis=0),
+        RandFlipd(keys=["image", "label"], prob=0.5, spatial_axis=1),
+        RandFlipd(keys=["image", "label"], prob=0.5, spatial_axis=2),
+        RandRotate90d(keys=["image", "label"], prob=0.5, max_k=3),
+        RandScaleIntensityd(keys="image", factors=0.1, prob=0.5),
+        RandShiftIntensityd(keys="image", offsets=0.1, prob=0.5),
+        EnsureTyped(keys=["image", "label"]),
+    ]
+    
+    # Dataset-specific sampling strategies
+    if dataset_name == "msd_liver":
+        # Foreground-biased sampling for MSD Liver (crucial for tumor detection)
+        sampling_transform = RandCropByPosNegLabeld(
+            keys=["image", "label"],
+            label_key="label",
+            spatial_size=patch_size,
+            pos=1.0,  # 100% positive samples (containing foreground)
+            neg=0.0,  # 0% negative samples (background only)
+            num_samples=1,
+            fg_indices_key="foreground_indices",
+            bg_indices_key="background_indices",
+        )
+        return Compose([sampling_transform] + base_augs)
+    else:
+        # Standard random sampling for other datasets
+        return Compose([
             SpatialPadd(keys=["image", "label"], spatial_size=patch_size, mode="constant"),
             RandSpatialCropd(keys=["image", "label"], roi_size=patch_size, random_size=False),
-            RandFlipd(keys=["image", "label"], prob=0.5, spatial_axis=0),
-            RandFlipd(keys=["image", "label"], prob=0.5, spatial_axis=1),
-            RandFlipd(keys=["image", "label"], prob=0.5, spatial_axis=2),
-            RandRotate90d(keys=["image", "label"], prob=0.5, max_k=3),
-            RandScaleIntensityd(keys="image", factors=0.1, prob=0.5),
-            RandShiftIntensityd(keys="image", offsets=0.1, prob=0.5),
-            EnsureTyped(keys=["image", "label"]),
-        ]
-    )
+        ] + base_augs)
 
 
 def get_transforms(dataset_name: str, phase: str, patch_size: Optional[Tuple[int, int, int]] = None) -> Compose:
@@ -99,7 +119,7 @@ def get_transforms(dataset_name: str, phase: str, patch_size: Optional[Tuple[int
     preprocess = get_preprocessing_transforms(dataset_name, phase)
     if patch_size is not None:
         if phase.lower() == "train":
-            return Compose([preprocess, get_augmentation_transforms(patch_size)])
+            return Compose([preprocess, get_augmentation_transforms(patch_size, dataset_name)])
         else:
             # For validation: pad then center crop to fixed size
             from monai.transforms import EnsureTyped
