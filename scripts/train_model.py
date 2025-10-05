@@ -49,7 +49,17 @@ def main() -> None:
     parser.add_argument("--save_every_epoch", action="store_true", help="Save checkpoint every epoch instead of every 10")
     parser.add_argument("--output_dir", default="results/tmp_run", help="Output directory for checkpoints and logs")
     parser.add_argument("--resume_from", default=None, help="Path to a checkpoint .pth file to resume from")
+    parser.add_argument("--patch_size", type=str, default="128,128,128", help="Patch size for training (e.g., '160,160,160')")
     args = parser.parse_args()
+
+    # MSD Liver optimizations
+    if args.dataset == "msd_liver":
+        # Use larger patch size for better performance
+        if args.patch_size == "128,128,128":  # Default
+            args.patch_size = "160,160,160"
+        # Use class-balanced loss for MSD Liver
+        if args.loss == "dice_ce":  # Default
+            args.loss = "dice_ce_balanced"
 
     # Check if training already completed (unless resuming)
     output_path = Path(args.output_dir)
@@ -62,15 +72,15 @@ def main() -> None:
     print(f"Using device: {device}")
     print(f"Dataset root: {args.data_root}")
 
+    patch_size_tuple = tuple(int(x) for x in args.patch_size.split(','))
     train_loader, val_loader = create_dataloaders(
         dataset_name=args.dataset,
         root_dir=args.data_root,
         batch_size=args.batch_size,
         num_workers=args.num_workers,
-        # Force patch-based training/validation for resource-constrained environments
-        patch_size=(128, 128, 128),
+        patch_size=patch_size_tuple,
     )
-    print(f"Created dataloaders with patch_size=(128, 128, 128)")
+    print(f"Created dataloaders with patch_size={patch_size_tuple}")
 
     model = create_model(
         architecture=args.architecture,
