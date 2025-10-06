@@ -35,11 +35,30 @@ class DiceCECombinedLoss(nn.Module):
 
     def forward(self, logits: torch.Tensor, target: torch.Tensor) -> torch.Tensor:  # type: ignore[override]
         # logits: [B, C, D, H, W]
-        # target: [B, 1, D, H, W] or [B, D, H, W]
-        if target.ndim == logits.ndim:
-            target = target.squeeze(1)
-        ce_loss = self.ce(logits, target.long())
-        dice_loss = self.dice(logits, target)
+        # target can be:
+        #   - class indices: [B, D, H, W] or [B, 1, D, H, W]
+        #   - one-hot: [B, C, D, H, W]
+
+        # Derive class indices for CE and one-hot for Dice, regardless of input format
+        if target.ndim == logits.ndim and target.shape[1] == logits.shape[1]:
+            # One-hot target provided
+            target_onehot = target
+            target_indices = target.argmax(dim=1)
+        else:
+            # Indices provided (possibly with channel dim = 1)
+            if target.ndim == logits.ndim:
+                target_indices = target.squeeze(1).long()
+            elif target.ndim == logits.ndim - 1:
+                target_indices = target.long()
+            else:
+                raise ValueError(f"Unexpected target shape for CE/Dice combo: {tuple(target.shape)}")
+            # Build one-hot for Dice to match logits channels
+            target_onehot = torch.nn.functional.one_hot(
+                target_indices.clamp_min(0), num_classes=logits.shape[1]
+            ).permute(0, 4, 1, 2, 3).to(logits.dtype)
+
+        ce_loss = self.ce(logits, target_indices)
+        dice_loss = self.dice(logits, target_onehot)
         return dice_loss + ce_loss
 
 
