@@ -82,10 +82,15 @@ def main() -> None:
     )
     print(f"Created dataloaders with patch_size={patch_size_tuple}")
 
+    # Ensure UNETR receives the correct img_size matching the training patch size
+    model_kwargs = {}
+    if args.architecture.lower() == "unetr":
+        model_kwargs["img_size"] = patch_size_tuple
     model = create_model(
         architecture=args.architecture,
         in_channels=args.in_channels,
         out_channels=args.out_channels,
+        **model_kwargs,
     )
     loss_fn = get_loss(args.loss)
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
