@@ -26,7 +26,8 @@ class Trainer:
     ) -> None:
         self.model = model.to(device)
         self.optimizer = optimizer
-        self.loss_fn = loss_fn
+        # Ensure loss (and its internal buffers/weights) are on the same device
+        self.loss_fn = loss_fn.to(device)
         self.device = device
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
