@@ -49,7 +49,13 @@ class Trainer:
         for epoch in range(start_epoch, self.max_epochs + 1):
             epoch_start = time.time()
             remaining_epochs = (self.max_epochs - epoch) + 1  # include current until we print ETA after validate
-            print(f"[Epoch {epoch}/{self.max_epochs}] Starting training…", flush=True)
+            start_msg = f"[Epoch {epoch}/{self.max_epochs}] Starting training…"
+            print(start_msg, flush=True)
+            try:
+                with open(self.output_dir / "train.log", "a", encoding="utf-8") as lf:
+                    lf.write(start_msg + "\n")
+            except Exception:
+                pass
             self.model.train()
             running_loss = 0.0
             for batch_data in train_loader:
@@ -81,11 +87,16 @@ class Trainer:
             eta_seconds = max(0.0, elapsed * max(0, self.max_epochs - epoch))
             eta_min = int(eta_seconds // 60)
             eta_sec = int(eta_seconds % 60)
-            print(
+            progress_msg = (
                 f"[Epoch {epoch}/{self.max_epochs}] loss={train_loss:.4f} val_dice={val_dice:.4f} "
-                f"time={elapsed:.1f}s ETA~{eta_min}m{eta_sec:02d}s",
-                flush=True,
+                f"time={elapsed:.1f}s ETA~{eta_min}m{eta_sec:02d}s"
             )
+            print(progress_msg, flush=True)
+            try:
+                with open(self.output_dir / "train.log", "a", encoding="utf-8") as lf:
+                    lf.write(progress_msg + "\n")
+            except Exception:
+                pass
 
             if val_dice > best_dice:
                 best_dice = val_dice
