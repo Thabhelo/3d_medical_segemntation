@@ -307,6 +307,16 @@ Training applies spatial transforms (random flip, rotation ±10°, scaling ±10%
   - **Proposed Solution**: Implement foreground-biased sampling (50-75% positive samples) for better tumor detection
   - **Training Time**: ~36 minutes per epoch, total ~22 hours for 50 epochs
   - **Next Steps**: Complete remaining 8 experiments, then implement MSD Liver optimizations
+
+- 2025-10-06: **MSD Liver UNETR Completed**: Successfully completed 50 epochs with dynamic LR scheduling and improved logging:
+
+  **MSD Liver UNETR Results (50 Epochs)**:
+  - **Training Completed**: All 50 epochs finished successfully with checkpoint persistence
+  - **Logging Enhancement**: Implemented real-time progress streaming to both stdout and `train.log` files
+  - **Device Compatibility**: Fixed CUDA/CPU tensor mismatch issues in custom DiceCECombinedLoss
+  - **Training Time**: ~22-25 hours total (consistent with UNet timing)
+  - **Checkpoint Management**: Epoch-by-epoch saves with `best.pth` for optimal model selection
+  - **Next Steps**: Proceed with MSD Liver SegResNet training, then TotalSegmentator experiments
   - **Per-Dataset IO Configuration**: Automatic channel mapping (BraTS 4→4, MSD Liver 1→3, TotalSegmentator 1→2), prevents architecture-dataset mismatch errors
   - **Skip Logic**: Detects existing `best.pth` checkpoints to avoid redundant training runs, enables iterative experimentation without data loss
   - **MONAI Integration**: Mixed precision training with CUDA AMP, proper one-hot encoding for multi-class Dice computation, compatibility with MONAI weekly builds for Python 3.12
