@@ -99,10 +99,13 @@ def main():
     
     # Configuration
     RESULTS_DIR = Path("results/colab_runs")
+    # Ensure output directory exists so results JSON is always written
+    RESULTS_DIR.mkdir(parents=True, exist_ok=True)
     DATASETS_CONFIG = {
         "brats": {"in_channels": 4, "out_channels": 4, "data_root": base_data_root},
         "msd_liver": {"in_channels": 1, "out_channels": 3, "data_root": f"{base_data_root}/MSD/Task03_Liver"},
-        "totalsegmentator": {"in_channels": 1, "out_channels": 2, "data_root": f"{base_data_root}/TotalSegmentator"},
+        # TotalSegmentator has 118 anatomical classes
+        "totalsegmentator": {"in_channels": 1, "out_channels": 118, "data_root": f"{base_data_root}/TotalSegmentator"},
     }
     ARCHITECTURES = ["unet", "unetr", "segresnet"]
     
@@ -149,7 +152,16 @@ def main():
     output_file = RESULTS_DIR / "evaluation_results.json"
     with open(output_file, "w") as f:
         json.dump(results, f, indent=2)
-    print(f"\nDetailed results saved to: {output_file}")
+    # Backward-compatibility: also write to results/evaluation_results.json if possible
+    legacy_dir = Path("results")
+    try:
+        legacy_dir.mkdir(parents=True, exist_ok=True)
+        legacy_file = legacy_dir / "evaluation_results.json"
+        with open(legacy_file, "w") as f:
+            json.dump(results, f, indent=2)
+        print(f"\nDetailed results saved to: {output_file} and {legacy_file}")
+    except Exception:
+        print(f"\nDetailed results saved to: {output_file}")
     
     # Print summary table
     if not df.empty:
