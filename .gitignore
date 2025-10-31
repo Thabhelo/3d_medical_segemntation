@@ -18,6 +18,9 @@ outputs/
 .checkpoints/
 .mypy_cache/
 pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
 
 # Colab/Drive artifacts
 drive/
