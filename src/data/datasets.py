@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+import warnings
 from .postprocess import fuse_totalseg_segmentations
 
 
@@ -306,7 +307,8 @@ class TotalSegmentatorDataset(MedicalDataset):
 
             try:
                 fused = fuse_totalseg_segmentations(subject_dir)
-            except Exception:
+            except Exception as e:
+                warnings.warn(f"Failed to fuse segmentations for {subject_dir.name}: {e}")
                 continue
 
             data.append({

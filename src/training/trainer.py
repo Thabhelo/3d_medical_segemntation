@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import Dict, Tuple
+import warnings
 
 import torch
 from torch.utils.data import DataLoader
@@ -58,8 +59,8 @@ class Trainer:
                 pass
             self.model.train()
             running_loss = 0.0
-            batch_losses = []  # Collect batch losses for DLRS scheduler
-            
+            batch_losses = [] if (self.scheduler and hasattr(self.scheduler, '__class__') and 'DLRS' in self.scheduler.__class__.__name__) else None
+
             for batch_data in train_loader:
                 # Handle MONAI batch format (can be list of dicts or dict)
                 batch = batch_data[0] if isinstance(batch_data, list) else batch_data
@@ -72,7 +73,10 @@ class Trainer:
                     # Convert labels to one-hot if needed for loss calculation
                     if labels.shape[1] == 1 and logits.shape[1] > 1:
                         # Ensure labels are integers and within valid range [0, num_classes-1]
-                        labels_int = labels.long().clamp(0, logits.shape[1] - 1)
+                        labels_long = labels.long()
+                        if labels_long.min() < 0 or labels_long.max() >= logits.shape[1]:
+                            warnings.warn(f"Labels out of range [{labels_long.min()}, {labels_long.max()}], clamping to [0, {logits.shape[1]-1}]")
+                        labels_int = labels_long.clamp(0, logits.shape[1] - 1)
                         labels_onehot = one_hot(labels_int, num_classes=logits.shape[1])
                     else:
                         labels_onehot = labels
@@ -82,7 +86,8 @@ class Trainer:
                 scaler.update()
                 loss_val = float(loss.item())
                 running_loss += loss_val
-                batch_losses.append(loss_val)
+                if batch_losses is not None:
+                    batch_losses.append(loss_val)
 
             train_loss = running_loss / max(1, len(train_loader))
             val_dice = self.validate(val_loader)
@@ -116,8 +121,8 @@ class Trainer:
             if self.scheduler is not None:
                 # Check if scheduler is DLRS (needs batch losses)
                 if hasattr(self.scheduler, '__class__') and 'DLRS' in self.scheduler.__class__.__name__:
-                    # DLRS scheduler requires batch losses
-                    self.scheduler.step(batch_losses)
+                    if batch_losses is not None:
+                        self.scheduler.step(batch_losses)
                 elif isinstance(self.scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
                     self.scheduler.step(val_dice)
                 else:

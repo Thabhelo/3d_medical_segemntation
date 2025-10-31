@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Iterable, List, Optional, Sequence, Tuple, TypeVar
 import os
-import random
+import numpy as np
 
 from monai.data import CacheDataset, Dataset
 from torch.utils.data import DataLoader
@@ -61,7 +61,7 @@ def deterministic_split(
         raise ValueError("train_fraction must be in (0, 1)")
 
     indices = list(range(len(items)))
-    rng = random.Random(seed)
+    rng = np.random.default_rng(seed)
     rng.shuffle(indices)
 
     cutoff = int(len(indices) * train_fraction)
