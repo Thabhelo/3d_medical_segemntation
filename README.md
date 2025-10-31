@@ -17,9 +17,7 @@ Comparative analysis framework for 3D medical image segmentation using MONAI and
 - `src/data/`: dataset loaders, transforms, dataloaders
 - `src/models/`: model factory and architectures (TBD)
 - `src/training/`: trainer and evaluator (TBD)
-- `configs/`: YAML configs (base provided)
 - `scripts/`: entry points
-- `scripts/dev/`: developer utilities (`setup_git.sh`, `setup_github_cli.sh`)
 - `notebooks/`: Colab environment setup and unified experiments runner
 
 ## Datasets
