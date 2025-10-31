@@ -26,6 +26,7 @@ REPO_ROOT = Path(__file__).parents[1]
 sys.path.insert(0, str(REPO_ROOT))
 
 from src.data.utils import create_dataloaders
+from src.data.dataset_configs import get_dataset_config
 from src.models.factory import create_model
 from src.models.losses import get_loss
 from src.training.trainer import Trainer
@@ -195,14 +196,9 @@ def main():
     
     # Configuration
     RESULTS_DIR = Path("results/colab_runs")
-    # Ensure output directory exists so results JSON is always written
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
-    DATASETS_CONFIG = {
-        "brats": {"in_channels": 4, "out_channels": 4, "data_root": base_data_root},
-        "msd_liver": {"in_channels": 1, "out_channels": 3, "data_root": f"{base_data_root}/MSD/Task03_Liver"},
-        # TotalSegmentator has 118 anatomical classes
-        "totalsegmentator": {"in_channels": 1, "out_channels": 118, "data_root": f"{base_data_root}/TotalSegmentator"},
-    }
+
+    DATASETS = ["brats", "msd_liver", "totalsegmentator"]
     ARCHITECTURES = ["unet", "unetr", "segresnet"]
     
     print(f"Environment: {'Colab' if is_colab else 'Local'}")
@@ -222,13 +218,13 @@ def main():
         # Parse dataset and architecture from path
         parts = checkpoint_path.parent.name.split("_")
         if len(parts) >= 2:
-            dataset = "_".join(parts[:-1])  # Handle multi-word datasets like "msd_liver"
+            dataset = "_".join(parts[:-1])
             architecture = parts[-1]
-            
-            if dataset in DATASETS_CONFIG and architecture in ARCHITECTURES:
+
+            if dataset in DATASETS and architecture in ARCHITECTURES:
                 print(f"Evaluating {dataset} + {architecture}...")
-                
-                config = DATASETS_CONFIG[dataset]
+
+                config = get_dataset_config(dataset, base_data_root)
                 try:
                     if run_eval:
                         eval_result = evaluate_model_checkpoint(

@@ -62,21 +62,17 @@ class DiceCECombinedLoss(nn.Module):
         return dice_loss + ce_loss
 
 
-def get_loss(loss_name: str, **kwargs: Any) -> nn.Module:
+def get_loss(loss_name: str, class_weights: Optional[Sequence[float]] = None, **kwargs: Any) -> nn.Module:
     name = (loss_name or "dice_ce").strip().lower()
     if name == "dice":
         return DiceLoss(sigmoid=True, **kwargs)
     if name in {"dice_ce", "dice+ce"}:
         return DiceCELoss(sigmoid=True, **kwargs)
     if name == "dice_ce_balanced":
-        # Prefer MONAI DiceCELoss with weights when supported by the installed version.
-        # Fall back to a custom Dice + CE combination if the signature differs.
-        ce_weights_list = [1.0, 1.0, 3.0]  # [background, liver, tumor]
+        ce_weights_list = class_weights or [1.0, 1.0, 3.0]
         try:
-            # Some MONAI versions expect `ce_weight`, others may differ.
             return DiceCELoss(sigmoid=True, ce_weight=ce_weights_list, **kwargs)  # type: ignore[arg-type]
         except TypeError:
-            # Fallback: explicit combination with torch.nn.CrossEntropyLoss
             return DiceCECombinedLoss(ce_weight=ce_weights_list)
     if name == "focal":
         return FocalLoss(**kwargs)

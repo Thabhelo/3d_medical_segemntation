@@ -181,6 +181,7 @@ def create_dataloaders(
     seed: int = 42,
     patch_size: Optional[Tuple[int, int, int]] = (128, 128, 128),
     cache_rate: float = 0.0,
+    val_batch_size: Optional[int] = None,
 ):
     """
     Build MONAI DataLoaders (train/val) with appropriate transforms.
@@ -203,6 +204,8 @@ def create_dataloaders(
         Size of patches to extract.
     cache_rate : float
         Fraction of data to cache in memory.
+    val_batch_size : Optional[int]
+        Batch size for validation. If None, defaults to 1.
     """
     if root_dir is None:
         root_dir = get_default_dataset_root()
@@ -240,7 +243,7 @@ def create_dataloaders(
 
     val_loader = DataLoader(
         val_ds,
-        batch_size=1,
+        batch_size=val_batch_size or 1,
         shuffle=False,
         num_workers=num_workers,
         pin_memory=True,

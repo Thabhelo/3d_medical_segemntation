@@ -15,6 +15,7 @@ if str(REPO_ROOT) not in sys.path:
 import torch
 
 from src.data.utils import create_dataloaders
+from src.data.dataset_configs import get_dataset_config
 from src.models.factory import create_model
 from src.models.losses import get_loss
 from src.training.trainer import Trainer
@@ -50,16 +51,15 @@ def main() -> None:
     parser.add_argument("--output_dir", default="results/tmp_run", help="Output directory for checkpoints and logs")
     parser.add_argument("--resume_from", default=None, help="Path to a checkpoint .pth file to resume from")
     parser.add_argument("--patch_size", type=str, default="128,128,128", help="Patch size for training (e.g., '160,160,160')")
+    parser.add_argument("--class_weights", type=str, default=None, help="Comma-separated class weights (e.g., '1.0,1.0,3.0')")
     args = parser.parse_args()
 
-    # MSD Liver optimizations
-    if args.dataset == "msd_liver":
-        # Use larger patch size for better performance
-        if args.patch_size == "128,128,128":  # Default
-            args.patch_size = "160,160,160"
-        # Use class-balanced loss for MSD Liver
-        if args.loss == "dice_ce":  # Default
-            args.loss = "dice_ce_balanced"
+    # Apply dataset-specific configs if using defaults
+    dataset_config = get_dataset_config(args.dataset, args.data_root)
+    if args.patch_size == "128,128,128" and "patch_size" in dataset_config:
+        args.patch_size = ",".join(map(str, dataset_config["patch_size"]))
+    if args.loss == "dice_ce" and "loss" in dataset_config:
+        args.loss = dataset_config["loss"]
 
     # Check if training already completed (unless resuming)
     output_path = Path(args.output_dir)
@@ -92,7 +92,14 @@ def main() -> None:
         out_channels=args.out_channels,
         **model_kwargs,
     )
-    loss_fn = get_loss(args.loss)
+
+    class_weights = None
+    if args.class_weights:
+        class_weights = [float(x) for x in args.class_weights.split(',')]
+    elif "class_weights" in dataset_config:
+        class_weights = dataset_config["class_weights"]
+
+    loss_fn = get_loss(args.loss, class_weights=class_weights)
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
     
     # Create learning rate scheduler
