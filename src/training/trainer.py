@@ -97,6 +97,10 @@ class Trainer:
                 torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=self.grad_clip)
                 scaler.step(self.optimizer)
                 scaler.update()
+
+                if self.scheduler is not None and isinstance(self.scheduler, torch.optim.lr_scheduler.OneCycleLR):
+                    self.scheduler.step()
+
                 loss_val = float(loss.item())
                 running_loss += loss_val
                 if batch_losses is not None:
@@ -155,6 +159,8 @@ class Trainer:
                         batch_losses.clear()
                 elif isinstance(self.scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
                     self.scheduler.step(val_dice)
+                elif isinstance(self.scheduler, torch.optim.lr_scheduler.OneCycleLR):
+                    pass
                 else:
                     self.scheduler.step()
 
@@ -188,8 +194,10 @@ class Trainer:
 
         result = self.val_dice.aggregate()
         if torch.isnan(result) or torch.isinf(result):
-            warnings.warn(f"Validation metric is NaN or Inf, returning 0.0")
-            return 0.0
+            raise RuntimeError(
+                f"Validation metric is NaN or Inf. This indicates a problem with predictions or labels. "
+                f"Check for: (1) NaN in model outputs, (2) invalid labels, (3) empty predictions"
+            )
         return float(result.item())
 
     def _save_checkpoint(self, epoch: int, val_dice: float, best: bool = False) -> None:

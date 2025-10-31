@@ -228,15 +228,6 @@ class MSDLiverDataset(MedicalDataset):
                 label_candidates = []
 
             label_path = next((p for p in label_candidates if p.exists()), None)
-            if label_path is None:
-                # Try a fuzzy match by stem containment
-                base_stem = Path(base).name if 'base' in locals() else img.stem
-                for cand in self.labels_dir.iterdir():
-                    if not is_nifti(cand):
-                        continue
-                    if base_stem in cand.stem or cand.stem in base_stem:
-                        label_path = cand
-                        break
 
             if label_path is None:
                 continue

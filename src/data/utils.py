@@ -223,15 +223,12 @@ def create_dataloaders(
         raise RuntimeError(f"Failed to create datasets for '{dataset_name}': {e}") from e
 
     persistent = num_workers > 0
-    if len(train_ds) == 0:
+
+    if len(train_ds) == 0 or len(val_ds) == 0:
         raise ValueError(
-            f"No training samples found for dataset '{dataset_name}' at root '{root_dir}'. "
-            f"Check that dataset exists and has valid data files."
-        )
-    if len(val_ds) == 0:
-        raise ValueError(
-            f"No validation samples found for dataset '{dataset_name}'. "
-            f"Try adjusting train_fraction or check dataset size."
+            f"Empty dataset for '{dataset_name}' at root '{root_dir}'. "
+            f"Found {len(train_ds)} train and {len(val_ds)} val samples. "
+            f"Check dataset path and file structure."
         )
 
     train_loader = DataLoader(
@@ -243,11 +240,6 @@ def create_dataloaders(
         persistent_workers=persistent,
         drop_last=True,
     )
-    if len(val_ds) == 0:
-        raise ValueError(
-            f"No validation samples found for dataset '{dataset_name}' at root '{root_dir}'. "
-            f"Please verify dataset paths."
-        )
 
     val_loader = DataLoader(
         val_ds,
@@ -256,6 +248,7 @@ def create_dataloaders(
         num_workers=num_workers,
         pin_memory=True,
         persistent_workers=persistent,
+        drop_last=False,
     )
 
     print(f"Dataset loaded: {len(train_ds)} train, {len(val_ds)} val samples")
