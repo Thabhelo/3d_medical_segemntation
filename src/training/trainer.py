@@ -25,6 +25,7 @@ class Trainer:
         num_classes: int = None,
         scheduler: torch.optim.lr_scheduler._LRScheduler = None,
         save_every_epoch: bool = False,
+        grad_clip: float = 1.0,
     ) -> None:
         self.model = model.to(device)
         self.optimizer = optimizer
@@ -38,6 +39,7 @@ class Trainer:
         self.num_classes = num_classes
         self.scheduler = scheduler
         self.save_every_epoch = save_every_epoch
+        self.grad_clip = grad_clip
         self.history: List[Dict] = []
 
         # Post-processing for metric computation
@@ -59,8 +61,8 @@ class Trainer:
             try:
                 with open(self.output_dir / "train.log", "a", encoding="utf-8") as lf:
                     lf.write(start_msg + "\n")
-            except Exception:
-                pass
+            except Exception as e:
+                warnings.warn(f"Failed to write to train.log: {e}")
             self.model.train()
             running_loss = 0.0
             batch_losses = [] if (self.scheduler and hasattr(self.scheduler, '__class__') and 'DLRS' in self.scheduler.__class__.__name__) else None
@@ -91,6 +93,8 @@ class Trainer:
                         labels_onehot = labels
                     loss = self.loss_fn(logits, labels_onehot)
                 scaler.scale(loss).backward()
+                scaler.unscale_(self.optimizer)
+                torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=self.grad_clip)
                 scaler.step(self.optimizer)
                 scaler.update()
                 loss_val = float(loss.item())
@@ -129,8 +133,8 @@ class Trainer:
             try:
                 with open(self.output_dir / "train.log", "a", encoding="utf-8") as lf:
                     lf.write(progress_msg + "\n")
-            except Exception:
-                pass
+            except Exception as e:
+                warnings.warn(f"Failed to write to train.log: {e}")
 
             if val_dice > best_dice:
                 best_dice = val_dice
@@ -148,6 +152,7 @@ class Trainer:
                 if hasattr(self.scheduler, '__class__') and 'DLRS' in self.scheduler.__class__.__name__:
                     if batch_losses is not None:
                         self.scheduler.step(batch_losses)
+                        batch_losses.clear()
                 elif isinstance(self.scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
                     self.scheduler.step(val_dice)
                 else:

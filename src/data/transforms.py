@@ -98,8 +98,8 @@ def get_augmentation_transforms(patch_size: Tuple[int, int, int], dataset_name: 
             keys=["image", "label"],
             label_key="label",
             spatial_size=patch_size,
-            pos=1.0,  # 100% positive samples (containing foreground)
-            neg=0.0,  # 0% negative samples (background only)
+            pos=0.9,  # 90% positive samples (containing foreground)
+            neg=0.1,  # 10% negative samples (background only)
             num_samples=1,
             fg_indices_key="foreground_indices",
             bg_indices_key="background_indices",

@@ -52,6 +52,7 @@ def main() -> None:
     parser.add_argument("--resume_from", default=None, help="Path to a checkpoint .pth file to resume from")
     parser.add_argument("--patch_size", type=str, default="128,128,128", help="Patch size for training (e.g., '160,160,160')")
     parser.add_argument("--class_weights", type=str, default=None, help="Comma-separated class weights (e.g., '1.0,1.0,3.0')")
+    parser.add_argument("--grad_clip", type=float, default=1.0, help="Gradient clipping max norm")
     args = parser.parse_args()
 
     # Apply dataset-specific configs if using defaults
@@ -161,6 +162,7 @@ def main() -> None:
         num_classes=args.out_channels,
         scheduler=scheduler,
         save_every_epoch=args.save_every_epoch,
+        grad_clip=args.grad_clip,
     )
 
     # Optional resume logic

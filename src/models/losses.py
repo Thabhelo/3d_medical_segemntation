@@ -23,7 +23,7 @@ class DiceCECombinedLoss(nn.Module):
         ce_kwargs: Optional[dict[str, Any]] = None,
     ) -> None:
         super().__init__()
-        self.dice = DiceLoss(sigmoid=True, **(dice_kwargs or {}))
+        self.dice = DiceLoss(sigmoid=False, softmax=True, **(dice_kwargs or {}))
 
         weight_tensor: Optional[torch.Tensor] = None
         if ce_weight is not None:
@@ -65,13 +65,13 @@ class DiceCECombinedLoss(nn.Module):
 def get_loss(loss_name: str, class_weights: Optional[Sequence[float]] = None, **kwargs: Any) -> nn.Module:
     name = (loss_name or "dice_ce").strip().lower()
     if name == "dice":
-        return DiceLoss(sigmoid=True, **kwargs)
+        return DiceLoss(sigmoid=False, softmax=True, **kwargs)
     if name in {"dice_ce", "dice+ce"}:
-        return DiceCELoss(sigmoid=True, **kwargs)
+        return DiceCELoss(sigmoid=False, softmax=True, **kwargs)
     if name == "dice_ce_balanced":
         ce_weights_list = class_weights or [1.0, 1.0, 3.0]
         try:
-            return DiceCELoss(sigmoid=True, ce_weight=ce_weights_list, **kwargs)  # type: ignore[arg-type]
+            return DiceCELoss(sigmoid=False, softmax=True, ce_weight=ce_weights_list, **kwargs)  # type: ignore[arg-type]
         except TypeError:
             return DiceCECombinedLoss(ce_weight=ce_weights_list)
     if name == "focal":
