@@ -135,13 +135,10 @@ def check_dataset_normalization(dataset_name: str, data_root: str, num_samples: 
 
 def main():
     """Main entry point."""
-    import os
-
-    # Auto-detect data root (Colab vs local)
-    if os.path.isdir("/content"):
-        data_root = "/content/drive/MyDrive/datasets"
-    else:
-        data_root = str(Path.home() / "Downloads" / "datasets")
+    from src.data.utils import get_default_dataset_root
+    
+    # Auto-detect data root (Colab, Google Drive Desktop, or local)
+    data_root = get_default_dataset_root()
 
     print(f"Using data root: {data_root}")
     print(f"PyTorch version: {torch.__version__}")

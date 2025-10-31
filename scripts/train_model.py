@@ -45,7 +45,7 @@ def main() -> None:
     parser.add_argument("--max_epochs", type=int, default=2, help="Max training epochs")
     parser.add_argument("--loss", default="dice_ce", help="Loss function key")
     parser.add_argument("--lr", type=float, default=1e-4, help="Learning rate")
-    parser.add_argument("--scheduler", default="none", help="LR scheduler: none | reduce_on_plateau | cosine | onecycle | polynomial")
+    parser.add_argument("--scheduler", default="none", help="LR scheduler: none | reduce_on_plateau | cosine | onecycle | polynomial | dlrs")
     parser.add_argument("--save_every_epoch", action="store_true", help="Save checkpoint every epoch instead of every 10")
     parser.add_argument("--output_dir", default="results/tmp_run", help="Output directory for checkpoints and logs")
     parser.add_argument("--resume_from", default=None, help="Path to a checkpoint .pth file to resume from")
@@ -96,6 +96,9 @@ def main() -> None:
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
     
     # Create learning rate scheduler
+    # For OneCycleLR and DLRS, we need steps_per_epoch
+    steps_per_epoch = len(train_loader) if hasattr(train_loader, '__len__') else None
+    
     scheduler = None
     if args.scheduler != "none":
         if args.scheduler == "reduce_on_plateau":
@@ -107,13 +110,24 @@ def main() -> None:
                 optimizer, T_max=args.max_epochs, eta_min=args.lr * 0.01
             )
         elif args.scheduler == "onecycle":
+            if steps_per_epoch is None:
+                raise ValueError("OneCycleLR requires train_loader with known length. Set drop_last=False or ensure dataloader is sized.")
+            total_steps = args.max_epochs * steps_per_epoch
             scheduler = torch.optim.lr_scheduler.OneCycleLR(
-                optimizer, max_lr=args.lr * 10, total_steps=args.max_epochs
+                optimizer, max_lr=args.lr * 10, total_steps=total_steps, epochs=args.max_epochs, steps_per_epoch=steps_per_epoch
             )
         elif args.scheduler == "polynomial":
             scheduler = torch.optim.lr_scheduler.PolynomialLR(
                 optimizer, total_iters=args.max_epochs, power=0.9
             )
+        elif args.scheduler == "dlrs":
+            try:
+                from dlrs import DLRSScheduler
+                scheduler = DLRSScheduler(optimizer)
+            except ImportError:
+                raise ImportError(
+                    "DLRS scheduler not found. Install with: pip install pytorch-dlrs"
+                )
         else:
             raise ValueError(f"Unknown scheduler: {args.scheduler}")
 

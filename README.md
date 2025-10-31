@@ -54,6 +54,15 @@ Synonyms examples:
 - TotalSegmentator: ~2000s/epoch (single-channel CT, 118-class→2-class simplified)
 - All models: CUDA acceleration, mixed precision, proper convergence
 
+### ✅ New Features
+- **2D Slice Visualization**: Generate triptych views (input, ground truth, prediction) and GIF animations
+- **Learning Rate Scheduler Experiments**: Compare schedulers (none, reduce_on_plateau, cosine, onecycle, polynomial, dlrs)
+- **DLRS Integration**: Dynamic Learning Rate Scheduler support for adaptive training
+- **Visualization CLI**: `scripts/visualize_predictions.py` for generating publication-quality visuals
+- **Scheduler Experiments**: `scripts/run_scheduler_experiments.py` for quick scheduler comparison
+
+See `SCHEDULER_EXPERIMENTS.md` for details on running scheduler experiments and generating visualizations.
+
 ### 🔄 Next Phase: Evaluation & Analysis
 - **Model Evaluation**: Comprehensive metrics (Dice, IoU, Hausdorff distance)
 - **Results Analysis**: Performance comparison across architectures and datasets

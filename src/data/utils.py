@@ -16,10 +16,21 @@ def _detect_dataset_root() -> Path:
     Determine a sensible default datasets root based on the environment.
 
     - In Google Colab: /content/drive/MyDrive/datasets
+    - Google Drive Desktop: ~/Library/CloudStorage/GoogleDrive-*/My Drive/datasets
     - Locally: ~/Downloads/datasets
     """
     if os.path.isdir("/content"):
         return Path("/content/drive/MyDrive/datasets")
+    
+    # Check for Google Drive Desktop (macOS)
+    cloud_storage = Path.home() / "Library" / "CloudStorage"
+    if cloud_storage.exists():
+        # Look for GoogleDrive-* directories
+        for gd_dir in cloud_storage.glob("GoogleDrive-*"):
+            datasets_path = gd_dir / "My Drive" / "datasets"
+            if datasets_path.exists():
+                return datasets_path
+    
     return Path.home() / "Downloads" / "datasets"
 
 

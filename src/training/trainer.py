@@ -58,6 +58,8 @@ class Trainer:
                 pass
             self.model.train()
             running_loss = 0.0
+            batch_losses = []  # Collect batch losses for DLRS scheduler
+            
             for batch_data in train_loader:
                 # Handle MONAI batch format (can be list of dicts or dict)
                 batch = batch_data[0] if isinstance(batch_data, list) else batch_data
@@ -78,7 +80,9 @@ class Trainer:
                 scaler.scale(loss).backward()
                 scaler.step(self.optimizer)
                 scaler.update()
-                running_loss += float(loss.item())
+                loss_val = float(loss.item())
+                running_loss += loss_val
+                batch_losses.append(loss_val)
 
             train_loss = running_loss / max(1, len(train_loader))
             val_dice = self.validate(val_loader)
@@ -110,7 +114,11 @@ class Trainer:
 
             # Step the learning rate scheduler if available
             if self.scheduler is not None:
-                if isinstance(self.scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
+                # Check if scheduler is DLRS (needs batch losses)
+                if hasattr(self.scheduler, '__class__') and 'DLRS' in self.scheduler.__class__.__name__:
+                    # DLRS scheduler requires batch losses
+                    self.scheduler.step(batch_losses)
+                elif isinstance(self.scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
                     self.scheduler.step(val_dice)
                 else:
                     self.scheduler.step()
