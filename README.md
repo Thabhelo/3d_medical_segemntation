@@ -60,5 +60,18 @@ Synonyms examples:
 - **Visualization**: Sample predictions, confusion matrices, learning curves
 - **Documentation**: Technical report with findings and reproducibility guide
 
+## Inference Speed Benchmarking
+Measure per-volume latency and throughput across GPUs to compare deployment efficiency.
+
+### Steps
+1. Ensure you have a trained checkpoint and a sample input tensor matching your model's IO shape.
+2. Run the following minimal snippet to time forward passes with CUDA synchronization:
+3. Log results in a table (dataset, architecture, GPU, num GPUs, latency, throughput, Torch, CUDA).
+
+Running `python scripts/evaluate_models.py` now performs both validation evaluation and inference benchmarking by default and writes a single unified summary at:
+- `results/colab_runs/evaluation_full.json` (also mirrored to `results/evaluation_full.json`).
+
+For the full protocol and reporting guidance, see "Inference Efficiency Benchmarking" in `DOCUMENTATION.md`.
+
 ## License
 MIT

@@ -47,24 +47,28 @@ def get_preprocessing_transforms(dataset_name: str, phase: str) -> Compose:
         ds_specific = [
             # BraTS labels use values [0, 1, 2, 4] - remap 4 to 3 for proper one-hot encoding
             MapLabelValued(keys="label", orig_labels=[0, 1, 2, 4], target_labels=[0, 1, 2, 3]),
-            NormalizeIntensityd(keys="image", nonzero=True, channel_wise=True),
+            # Scale intensity to [0, 1] range (neural networks expect inputs in [0, 1])
+            ScaleIntensityRanged(
+                keys="image", a_min=0, a_max=5000, b_min=0.0, b_max=1.0, clip=True
+            ),
             CropForegroundd(keys=["image", "label"], source_key="image"),
         ]
     elif name == "msd_liver":
         ds_specific = [
-            # Improved preprocessing for MSD Liver (following nnU-Net recommendations)
+            # Scale CT intensity to [0, 1] range (neural networks expect inputs in [0, 1])
+            # Using clinically relevant HU range for liver CT: [-200, 250]
             ScaleIntensityRanged(
                 keys="image", a_min=-200, a_max=250, b_min=0.0, b_max=1.0, clip=True
             ),
-            # Z-score normalization per volume (crucial for liver segmentation)
-            NormalizeIntensityd(keys="image", nonzero=True, channel_wise=True),
             CropForegroundd(keys=["image", "label"], source_key="image"),
         ]
     elif name == "totalsegmentator":
         ds_specific = [
+            # Scale CT intensity to [0, 1] range with proper clipping
             ScaleIntensityRanged(
                 keys="image", a_min=-1024, a_max=1024, b_min=0.0, b_max=1.0, clip=True
-            )
+            ),
+            CropForegroundd(keys=["image", "label"], source_key="image"),
         ]
     else:
         ds_specific = []

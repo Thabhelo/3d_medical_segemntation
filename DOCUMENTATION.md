@@ -196,6 +196,97 @@ Training applies spatial transforms (random flip, rotation ±10°, scaling ±10%
 
 ---
 
+## 5.5 Inference Efficiency Benchmarking
+
+This section documents how we measure inference speed and hardware utilization to compare deployment efficiency across architectures and GPUs.
+
+### 5.5.1 Definitions
+
+- **Latency (ms/volume)**: End-to-end time to segment a single 3D volume at batch size 1.
+- **Throughput (volumes/sec)**: Number of 3D volumes processed per second (larger is better).
+- **Warmup**: Initial iterations excluded to avoid startup overhead bias.
+
+### 5.5.2 Measurement Protocol
+
+To ensure reproducible and comparable results across environments:
+
+1. Use batch size = 1 and evaluation mode (`model.eval()`), with no gradient computation.
+2. Synchronize CUDA before and after timing blocks to get accurate GPU timings.
+3. Run 5 warmup iterations, then 20 timed iterations; report mean ± std.
+4. Record environment metadata: GPU name, number of GPUs, CUDA version, PyTorch and MONAI versions.
+
+### 5.5.3 Reference Snippet (PyTorch)
+
+The following Python snippet illustrates the exact timing methodology we use when benchmarking:
+
+```
+import time, torch
+
+def benchmark_inference(model, sample_input, warmup=5, iters=20):
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    model = model.to(device).eval()
+    x = sample_input.to(device)
+    torch.cuda.synchronize() if device.type == 'cuda' else None
+
+    # Warmup
+    with torch.inference_mode():
+        for _ in range(warmup):
+            _ = model(x)
+            if device.type == 'cuda':
+                torch.cuda.synchronize()
+
+    # Timed
+    times = []
+    with torch.inference_mode():
+        for _ in range(iters):
+            t0 = time.perf_counter()
+            _ = model(x)
+            if device.type == 'cuda':
+                torch.cuda.synchronize()
+            t1 = time.perf_counter()
+            times.append((t1 - t0) * 1000.0)  # ms
+
+    import numpy as np
+    mean_ms, std_ms = float(np.mean(times)), float(np.std(times))
+    return {
+        'latency_ms_per_volume_mean': mean_ms,
+        'latency_ms_per_volume_std': std_ms,
+        'throughput_vol_s': 1000.0 / mean_ms,
+    }
+
+def get_env_info():
+    info = {
+        'num_gpus': torch.cuda.device_count(),
+        'device': 'cuda' if torch.cuda.is_available() else 'cpu',
+        'torch_version': torch.__version__,
+        'cuda_version': torch.version.cuda,
+        'cudnn_enabled': torch.backends.cudnn.enabled,
+    }
+    if torch.cuda.is_available():
+        info.update({
+            'gpu_name': torch.cuda.get_device_name(0),
+            'sm_count': torch.cuda.get_device_properties(0).multi_processor_count,
+            'total_vram_gb': round(torch.cuda.get_device_properties(0).total_memory / 1e9, 2),
+        })
+    return info
+```
+
+Notes:
+- We time only the forward pass; any I/O and postprocessing can be measured separately if needed.
+- For patch-based inference, measure the entire tiled/stitched pipeline as seen in deployment.
+
+### 5.5.4 Reporting Template
+
+We use the following table structure to log results by dataset, architecture, and GPU. Populate after running the above protocol.
+
+| Dataset | Architecture | GPU | Num GPUs | Latency (ms/vol) | Throughput (vol/s) | Torch | CUDA |
+|---------|--------------|-----|----------|------------------|--------------------|-------|------|
+| BraTS | UNet | A100 40GB | 1 | TBD | TBD | 2.4.0 | 12.1 |
+| BraTS | UNETR | A100 40GB | 1 | TBD | TBD | 2.4.0 | 12.1 |
+| BraTS | SegResNet | A100 40GB | 1 | TBD | TBD | 2.4.0 | 12.1 |
+
+When multiple GPUs are used (e.g., data parallel inference), we record `Num GPUs > 1` and describe the batching/tiling strategy used to achieve speedup.
+
 ## 6. Discussion
 
 ### 6.1 Performance Trends
