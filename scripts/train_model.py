@@ -73,6 +73,11 @@ def main() -> None:
     print(f"Dataset root: {args.data_root}")
 
     patch_size_tuple = tuple(int(x) for x in args.patch_size.split(','))
+    if len(patch_size_tuple) != 3:
+        raise ValueError(f"patch_size must have 3 dimensions, got {len(patch_size_tuple)}")
+    if any(p <= 0 for p in patch_size_tuple):
+        raise ValueError(f"patch_size must be positive, got {patch_size_tuple}")
+
     train_loader, val_loader = create_dataloaders(
         dataset_name=args.dataset,
         root_dir=args.data_root,
@@ -80,11 +85,14 @@ def main() -> None:
         num_workers=args.num_workers,
         patch_size=patch_size_tuple,
     )
-    print(f"Created dataloaders with patch_size={patch_size_tuple}")
+    print(f"Created dataloaders: {len(train_loader)} train batches, {len(val_loader)} val batches")
+    print(f"Patch size: {patch_size_tuple}")
 
     # Ensure UNETR receives the correct img_size matching the training patch size
     model_kwargs = {}
     if args.architecture.lower() == "unetr":
+        if any(p % 16 != 0 for p in patch_size_tuple):
+            raise ValueError(f"UNETR requires patch_size divisible by 16, got {patch_size_tuple}")
         model_kwargs["img_size"] = patch_size_tuple
     model = create_model(
         architecture=args.architecture,
@@ -96,11 +104,16 @@ def main() -> None:
     class_weights = None
     if args.class_weights:
         class_weights = [float(x) for x in args.class_weights.split(',')]
+        if len(class_weights) != args.out_channels:
+            raise ValueError(f"class_weights length {len(class_weights)} must match out_channels {args.out_channels}")
     elif "class_weights" in dataset_config:
         class_weights = dataset_config["class_weights"]
 
     loss_fn = get_loss(args.loss, class_weights=class_weights)
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
+
+    num_params = sum(p.numel() for p in model.parameters())
+    print(f"Model: {args.architecture} with {num_params:,} parameters ({num_params/1e6:.2f}M)")
     
     # Create learning rate scheduler
     # For OneCycleLR and DLRS, we need steps_per_epoch
@@ -155,18 +168,22 @@ def main() -> None:
     if args.resume_from is not None:
         ckpt_path = Path(args.resume_from)
         if not ckpt_path.exists():
-            raise FileNotFoundError(f"--resume_from checkpoint not found: {ckpt_path}")
-        print(f"Resuming from checkpoint: {ckpt_path}")
+            raise FileNotFoundError(f"Checkpoint not found: {ckpt_path}")
+        print(f"Loading checkpoint: {ckpt_path}")
         ckpt = torch.load(str(ckpt_path), map_location=device)
-        if "model" in ckpt:
+        if "model" not in ckpt:
+            raise ValueError(f"Checkpoint missing 'model' key: {ckpt.keys()}")
+        try:
             model.load_state_dict(ckpt["model"], strict=True)
+        except RuntimeError as e:
+            raise RuntimeError(f"Checkpoint incompatible with model architecture: {e}")
         if "optimizer" in ckpt:
             optimizer.load_state_dict(ckpt["optimizer"])
         if "scheduler" in ckpt and scheduler is not None:
             scheduler.load_state_dict(ckpt["scheduler"])
         if "epoch" in ckpt:
             start_epoch = int(ckpt["epoch"]) + 1
-        print(f"Resume start_epoch set to {start_epoch}")
+        print(f"Resumed from epoch {ckpt.get('epoch', 0)}, continuing from epoch {start_epoch}")
 
     metrics = trainer.train(train_loader, val_loader, start_epoch=start_epoch)
     print(metrics)

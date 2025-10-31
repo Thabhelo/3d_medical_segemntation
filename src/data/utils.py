@@ -210,20 +210,28 @@ def create_dataloaders(
     if root_dir is None:
         root_dir = get_default_dataset_root()
     
-    train_ds, val_ds = create_monai_datasets(
-        dataset_name=dataset_name,
-        root_dir=root_dir,
-        train_fraction=train_fraction,
-        seed=seed,
-        patch_size=patch_size,
-        cache_rate=cache_rate,
-    )
+    try:
+        train_ds, val_ds = create_monai_datasets(
+            dataset_name=dataset_name,
+            root_dir=root_dir,
+            train_fraction=train_fraction,
+            seed=seed,
+            patch_size=patch_size,
+            cache_rate=cache_rate,
+        )
+    except Exception as e:
+        raise RuntimeError(f"Failed to create datasets for '{dataset_name}': {e}") from e
 
     persistent = num_workers > 0
     if len(train_ds) == 0:
         raise ValueError(
             f"No training samples found for dataset '{dataset_name}' at root '{root_dir}'. "
-            f"Please verify dataset paths."
+            f"Check that dataset exists and has valid data files."
+        )
+    if len(val_ds) == 0:
+        raise ValueError(
+            f"No validation samples found for dataset '{dataset_name}'. "
+            f"Try adjusting train_fraction or check dataset size."
         )
 
     train_loader = DataLoader(
@@ -249,6 +257,8 @@ def create_dataloaders(
         pin_memory=True,
         persistent_workers=persistent,
     )
+
+    print(f"Dataset loaded: {len(train_ds)} train, {len(val_ds)} val samples")
     return train_loader, val_loader
 
 
