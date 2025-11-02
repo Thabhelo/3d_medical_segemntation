@@ -192,7 +192,12 @@ def main() -> None:
         print(f"Resumed from epoch {ckpt.get('epoch', 0)}, continuing from epoch {start_epoch}")
 
     metrics = trainer.train(train_loader, val_loader, start_epoch=start_epoch)
-    print(metrics)
+    best_dice = metrics.get("best_dice", -1.0)
+    print("\n" + "=" * 60)
+    print(f"Training completed!")
+    print(f"Best validation Dice score: {best_dice:.4f}")
+    print(f"Checkpoint saved to: {output_path / 'best.pth'}")
+    print("=" * 60)
 
 
 if __name__ == "__main__":
