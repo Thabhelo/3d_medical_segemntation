@@ -75,8 +75,6 @@ class Trainer:
 
                 if batch_idx == 0 and epoch == start_epoch:
                     print(f"Batch shapes: image={tuple(images.shape)}, label={tuple(labels.shape)}")
-                    if images.shape[1] != self.model.in_channels if hasattr(self.model, 'in_channels') else True:
-                        warnings.warn(f"Input channels mismatch: image has {images.shape[1]}, expected different")
 
                 self.optimizer.zero_grad(set_to_none=True)
                 with torch.amp.autocast('cuda', enabled=self.amp):

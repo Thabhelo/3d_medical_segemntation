@@ -57,6 +57,10 @@ def main() -> None:
 
     # Apply dataset-specific configs if using defaults
     dataset_config = get_dataset_config(args.dataset, args.data_root)
+    if args.in_channels == 1 and "in_channels" in dataset_config:
+        args.in_channels = dataset_config["in_channels"]
+    if args.out_channels == 2 and "out_channels" in dataset_config:
+        args.out_channels = dataset_config["out_channels"]
     if args.patch_size == "128,128,128" and "patch_size" in dataset_config:
         args.patch_size = ",".join(map(str, dataset_config["patch_size"]))
     if args.loss == "dice_ce" and "loss" in dataset_config:
