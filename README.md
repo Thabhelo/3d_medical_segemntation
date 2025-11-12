@@ -13,13 +13,6 @@ Comparative analysis framework for 3D medical image segmentation using MONAI and
    - `MSD/` (or `MSD_Liver`, `Task03_Liver`)
    - `TotalSegmentator/` (or `TotalSeg`)
 
-## Project Structure
-- `src/data/`: dataset loaders, transforms, dataloaders
-- `src/models/`: model factory and architectures (TBD)
-- `src/training/`: trainer and evaluator (TBD)
-- `scripts/`: entry points
-- `notebooks/`: Colab environment setup and unified experiments runner
-
 ## Datasets
 Place datasets in Drive at `/content/drive/MyDrive/datasets`. Folder synonyms are supported. See `src/data/utils.py:normalize_dataset_name`.
 Synonyms examples:
@@ -51,15 +44,6 @@ Synonyms examples:
 - MSD Liver: ~1500s/epoch (single-channel CT, 3-class liver segmentation)  
 - TotalSegmentator: ~2000s/epoch (single-channel CT, 118-class→2-class simplified)
 - All models: CUDA acceleration, mixed precision, proper convergence
-
-### ✅ New Features
-- **2D Slice Visualization**: Generate triptych views (input, ground truth, prediction) and GIF animations
-- **Learning Rate Scheduler Experiments**: Compare schedulers (none, reduce_on_plateau, cosine, onecycle, polynomial, dlrs)
-- **DLRS Integration**: Dynamic Learning Rate Scheduler support for adaptive training
-- **Visualization CLI**: `scripts/visualize_predictions.py` for generating publication-quality visuals
-- **Scheduler Experiments**: `scripts/run_scheduler_experiments.py` for quick scheduler comparison
-
-See `SCHEDULER_EXPERIMENTS.md` for details on running scheduler experiments and generating visualizations.
 
 ## Results Visualization
 
