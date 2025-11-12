@@ -31,5 +31,6 @@ drive/
 # System
 .idea/
 .vscode/
+.claude/
 NEXT_STEPS.md
 COLAB_INSTRUCTIONS.md
