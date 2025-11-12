@@ -61,6 +61,46 @@ Synonyms examples:
 
 See `SCHEDULER_EXPERIMENTS.md` for details on running scheduler experiments and generating visualizations.
 
+## Results Visualization
+
+### 3D Brain Tumor Segmentation (BraTS + U-Net)
+
+Our trained models successfully segment brain tumors across multiple MRI modalities. Below are sample predictions showing the model's ability to identify tumor regions in different anatomical planes:
+
+#### Static Slice Comparisons
+<div align="center">
+  <img src="docs/images/visualizations/brats_unet/axial_slice063.png" width="45%">
+  <img src="docs/images/visualizations/brats_unet/coronal_slice063.png" width="45%">
+  <p><em>Axial (left) and Coronal (right) views showing input, ground truth, and prediction</em></p>
+</div>
+
+<div align="center">
+  <img src="docs/images/visualizations/brats_unet/sagittal_slice063.png" width="45%">
+  <p><em>Sagittal view demonstrating multi-class segmentation accuracy</em></p>
+</div>
+
+#### 3D Volume Animations
+Watch the model predictions sweep through the entire 3D volume:
+
+<div align="center">
+  <img src="docs/images/visualizations/brats_unet/axial_prediction.gif" width="30%">
+  <img src="docs/images/visualizations/brats_unet/coronal_prediction.gif" width="30%">
+  <img src="docs/images/visualizations/brats_unet/sagittal_prediction.gif" width="30%">
+  <p><em>Axial, Coronal, and Sagittal predictions animated across all slices</em></p>
+</div>
+
+<div align="center">
+  <img src="docs/images/visualizations/brats_unet/axial_ground_truth.gif" width="30%">
+  <img src="docs/images/visualizations/brats_unet/coronal_ground_truth.gif" width="30%">
+  <img src="docs/images/visualizations/brats_unet/sagittal_ground_truth.gif" width="30%">
+  <p><em>Ground truth segmentations for comparison</em></p>
+</div>
+
+**Key Achievements**:
+- Multi-class segmentation: Accurately distinguishes tumor core, enhancing tumor, and edema
+- Volumetric consistency: Predictions maintain anatomical coherence across all three planes
+- Clinical relevance: Results suitable for radiological assessment and treatment planning
+
 ### 🔄 Next Phase: Evaluation & Analysis
 - **Model Evaluation**: Comprehensive metrics (Dice, IoU, Hausdorff distance)
 - **Results Analysis**: Performance comparison across architectures and datasets

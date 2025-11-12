@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(tree:*)",
+      "Bash(find:*)",
+      "Bash(python -m py_compile:*)",
+      "Bash(git add:*)",
+      "Bash(git rm:*)",
+      "Bash(git commit:*)",
+      "Bash(python -m pytest:*)",
+      "Bash(python -m mypy:*)",
+      "Bash(python:*)",
+      "Read(//var/folders/26/bxk2mz1n4mb9n06ltfvgk4980000gn/T/TemporaryItems/NSIRD_screencaptureui_eK9z0O/**)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
