@@ -13,14 +13,6 @@ Comparative analysis framework for 3D medical image segmentation using MONAI and
    - `MSD/` (or `MSD_Liver`, `Task03_Liver`)
    - `TotalSegmentator/` (or `TotalSeg`)
 
-## Datasets
-Place datasets in Drive at `/content/drive/MyDrive/datasets`. Folder synonyms are supported. See `src/data/utils.py:normalize_dataset_name`.
-Synonyms examples:
-- BraTS: `BraTS`, `brats`, `BraTS2021`
-- MSD Liver: `MSD`, `MSD_Liver`, `Task03_Liver`
-- TotalSegmentator: `TotalSegmentator`, `TotalSegmentor`, `TotalSegmantator`, `TotalSeg`
-  (We now standardize on `TotalSegmentator` only.)
-
 ## Status
 
 ### ✅ Completed Infrastructure
